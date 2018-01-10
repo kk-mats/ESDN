@@ -118,8 +118,20 @@ public class ASTCompiler implements ASTVisitor
 	public void visit(ASTExpression n) throws ASTException
 	{
 		n.getLeft().accept(this);
+		String r1=n.getLeft().getReturnValueSymbol();
+		if(r1.indexOf('=')>0)
+		{
+			code.addLine(null, CASLInst.LD, temporaryVariable.getNew(), r1);
+			r1=temporaryVariable.getLatest();
+		}
 		n.getRight().accept(this);
-		code.addLine(null, n.getEvalType()==ASTEvalType.tInteger ? CASLInst.CPA : CASLInst.CPL, n.getLeft().getReturnValueSymbol(), n.getRight().getReturnValueSymbol());
+		String r2=n.getRight().getReturnValueSymbol();
+		if(r2.indexOf('=')>=0)
+		{
+			code.addLine(null, CASLInst.LD, temporaryVariable.getNew(), r2);
+			r2=temporaryVariable.getLatest();
+		}
+		code.addLine(null, n.getEvalType()==ASTEvalType.tInteger ? CASLInst.CPA : CASLInst.CPL, r1, r2);
 	}
 
 	@Override
@@ -218,7 +230,8 @@ public class ASTCompiler implements ASTVisitor
 				{
 					if(n.getEvalType()==ASTEvalType.tString)
 					{
-						constant.addLine(null, CASLInst.DC, temporaryVariable.getNew(), n.getRecord().getText());
+						constant.addLine(temporaryVariable.getNew(), CASLInst.DC, n.getRecord().getText());
+						n.setReturnValueSymbol(temporaryVariable.getLatest());
 						break;
 					}
 					n.setReturnValueSymbol("="+n.getRecord().getText());
@@ -338,7 +351,29 @@ public class ASTCompiler implements ASTVisitor
 	@Override
 	public void visit(ASTOutputStatement n) throws ASTException
 	{
-
+		for(ASTExpressionNode e:n.getExpressions())
+		{
+			e.accept(this);
+			switch(e.getEvalType())
+			{
+				case tInteger:
+				{
+					code.addLine(null, CASLInst.CALL, "WRTINT", e.getReturnValueSymbol());
+					break;
+				}
+				case tChar:
+				{
+					code.addLine(null, CASLInst.CALL, "WRTCH", e.getReturnValueSymbol());
+					break;
+				}
+				case tString:
+				{
+					code.addLine(null, CASLInst.CALL, "WRTSTR", e.getReturnValueSymbol());
+					break;
+				}
+			}
+		}
+		code.addLine(null, CASLInst.CALL, "WRTLN");
 	}
 
 	@Override
