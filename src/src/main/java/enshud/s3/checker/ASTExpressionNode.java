@@ -1,10 +1,9 @@
 package enshud.s3.checker;
 
-import enshud.s1.lexer.TSToken;
-
 abstract public class ASTExpressionNode extends AST
 {
 	protected ASTEvalType evalType;
+	protected String returnValueSymbol;
 
 	public ASTExpressionNode(final Record record)
 	{
@@ -16,8 +15,18 @@ abstract public class ASTExpressionNode extends AST
 		return evalType;
 	}
 
+	public String getReturnValueSymbol()
+	{
+		return returnValueSymbol;
+	}
+
 	public void setEvalType(final ASTEvalType evalType)
 	{
 		this.evalType=evalType;
+	}
+
+	public void setReturnValueSymbol(String returnValueSymbol)
+	{
+		this.returnValueSymbol=returnValueSymbol;
 	}
 }

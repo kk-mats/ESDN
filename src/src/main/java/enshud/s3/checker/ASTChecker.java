@@ -1,8 +1,11 @@
 package enshud.s3.checker;
 
+import java.util.ArrayDeque;
+
 public class ASTChecker implements ASTVisitor
 {
 	private ASTFunctionTable table;
+	private ArrayDeque<String> scope=new ArrayDeque<>();
 
 	public ASTChecker()
 	{
@@ -220,6 +223,7 @@ public class ASTChecker implements ASTVisitor
 				throw new SemErrorException(n.getIndex());
 			}
 			n.setEvalType(v.getEvalType().toStandardType());
+			n.setName(table.getScope(scope, n.getName()));
 			return;
 		}
 		throw new SemErrorException(n);
@@ -302,6 +306,7 @@ public class ASTChecker implements ASTVisitor
 	public void visit(ASTProgram n) throws ASTException
 	{
 		table.setGlobalName(n.getName());
+		scope.addLast(n.getName());
 		for(String s:n.getNames())
 		{
 			if(!table.addGlobalParameter(s, n.getRecord()))
@@ -311,6 +316,7 @@ public class ASTChecker implements ASTVisitor
 		}
 		n.getBlock().accept(this);
 		n.getCompoundStatement().accept(this);
+		scope.removeLast();
 	}
 
 	@Override
@@ -320,6 +326,7 @@ public class ASTChecker implements ASTVisitor
 		if(v!=null)
 		{
 			n.setEvalType(v.getEvalType());
+			n.setName(table.getScope(scope, n.getName()));
 			return;
 		}
 		throw new SemErrorException(n);
@@ -334,8 +341,8 @@ public class ASTChecker implements ASTVisitor
 		{
 			throw new SemErrorException(n);
 		}
-
 		r.setName(n.getName());
+		scope.addLast(n.getName());
 
 		if(n.getParameters()!=null)
 		{
@@ -369,6 +376,7 @@ public class ASTChecker implements ASTVisitor
 		}
 		table.addRecord(r);
 		n.getCompoundStatement().accept(this);
+		scope.removeLast();
 	}
 
 	@Override

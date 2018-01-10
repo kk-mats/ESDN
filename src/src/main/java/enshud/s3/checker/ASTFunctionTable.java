@@ -1,5 +1,6 @@
 package enshud.s3.checker;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 
 public class ASTFunctionTable
@@ -71,28 +72,18 @@ public class ASTFunctionTable
 				return r.getVariableType();
 			}
 		}
-		r=global.getRecordOf(name);
-		if(null!=r)
-		{
-			return r.getVariableType();
-		}
-		return null;
+		return (r=global.getRecordOf(name))!=null ? r.getVariableType() : null;
 	}
 
-	public ASTEvalType getEvalType(final String name)
+	public String getScope(final ArrayDeque<String> scope, final String name)
 	{
-		return getVariableType(name).getEvalType();
+		ASTFunctionRecord r=subprogram.stream().filter(s->(s.getName().equals(scope.getLast()) && s.findBy(name))).findAny().orElse(null);
+		return  r!=null ? scope.stream().reduce("", (joined, s)->joined+s+".")+name : global.getName()+"."+name;
 	}
 
 	public ASTVariableTable getFunctionParameter(final String name)
 	{
-		for(ASTFunctionRecord r: subprogram)
-		{
-			if(r.getName().equals(name))
-			{
-				return r.getParameters();
-			}
-		}
-		return null;
+		ASTFunctionRecord r=subprogram.stream().filter(s->s.getName().equals(name)).findAny().get();
+		return r!=null ? r.getParameters() : null;
 	}
 }
