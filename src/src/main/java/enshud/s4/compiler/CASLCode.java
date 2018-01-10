@@ -31,9 +31,8 @@ public class CASLCode
 		}
 		public String toString()
 		{
-			String s=label!=null ? label+" " : "";
-			s+=inst.toString();
-			s+=" ";
+			String s=label!=null ? label+"\t\t" : "\t\t";
+			s+=inst.toString()+(inst.toString().length()<4 ? "\t\t" : "\t");
 			s+=String.join(", ", operand);
 			return s;
 		}
@@ -47,14 +46,32 @@ public class CASLCode
 		label.add(new Label(name, index));
 	}
 
-	public void addLine(final String label, final CASLInst inst, final String [] operand)
+	public void addLine(final String label, final CASLInst inst)
 	{
-		lines.add(new CASLRecord(label, inst, operand));
+		lines.add(new CASLRecord(label, inst, new String[]{}));
+	}
+
+	public void addLine(final String label, final CASLInst inst, final String r)
+	{
+		lines.add(new CASLRecord(label, inst, new String[]{r}));
+	}
+	public void addLine(final String label, final CASLInst inst, final String r1, final String r2)
+	{
+		lines.add(new CASLRecord(label, inst, new String[]{r1, r2}));
+	}
+	public void addLine(final String label, final CASLInst inst, final String r, final String adr, final String x)
+	{
+		lines.add(new CASLRecord(label, inst, new String[]{r, adr, x}));
 	}
 
 	public String toString()
 	{
 		return lines.stream().sequential().reduce("", (joined, r)->joined+r.toString()+"\n", (joined, r)->null);
+	}
+
+	public int size()
+	{
+		return lines.size();
 	}
 
 }
