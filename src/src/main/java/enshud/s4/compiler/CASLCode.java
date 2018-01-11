@@ -31,7 +31,7 @@ public class CASLCode
 		}
 		public String toString()
 		{
-			String s=label!=null ? label+"\t\t" : "\t\t";
+			String s=label!=null ? label+(label.length()>3 ? "\t" : "\t\t") : "\t\t";
 			s+=inst.toString()+(inst.toString().length()<4 ? "\t\t" : "\t");
 			s+=String.join(", ", operand);
 			return s;
