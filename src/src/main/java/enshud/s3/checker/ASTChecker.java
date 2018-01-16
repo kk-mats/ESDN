@@ -1,18 +1,20 @@
 package enshud.s3.checker;
 
+import enshud.s1.lexer.TSToken;
+
 import java.util.ArrayDeque;
 
 public class ASTChecker implements ASTVisitor
 {
-	private ASTFunctionTable table;
+	private ASTSymbolTable table;
 	private ArrayDeque<String> scope=new ArrayDeque<>();
 
 	public ASTChecker()
 	{
-		table=new ASTFunctionTable();
+		table=new ASTSymbolTable();
 	}
 
-	public ASTFunctionTable getTable()
+	public ASTSymbolTable getTable()
 	{
 		return table;
 	}
@@ -222,6 +224,8 @@ public class ASTChecker implements ASTVisitor
 			{
 				throw new SemErrorException(n.getIndex());
 			}
+			n.setIndex(new ASTSimpleExpression(ASTSimpleExpression.POSITIVE, n.getIndex(), new ASTFactor(new Record(TSToken.SCONSTANT, String.valueOf(v.getOffset()), n.getRecord().getLineNumber())), new Record(TSToken.SMINUS, "-", n.getRecord().getLineNumber())));
+			((ASTSimpleExpression)n.getIndex()).getRight().setEvalType(ASTEvalType.tInteger);
 			n.setEvalType(v.getEvalType().toStandardType());
 			n.setName(table.getScope(scope, n.getName()));
 			return;
