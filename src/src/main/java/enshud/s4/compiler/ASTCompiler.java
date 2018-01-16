@@ -2,6 +2,8 @@ package enshud.s4.compiler;
 
 import enshud.s1.lexer.TSToken;
 import enshud.s3.checker.*;
+
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class ASTCompiler implements ASTVisitor
@@ -48,6 +50,7 @@ public class ASTCompiler implements ASTVisitor
 	public ASTCompiler(final ASTFunctionTable table)
 	{
 		this.table=table;
+		storage.addLine("LIBBUF", CASLInst.DS, "256");
 		setStorage(table.getGlobal());
 		table.getSubprogram().forEach(this::setStorage);
 	}
@@ -176,19 +179,28 @@ public class ASTCompiler implements ASTVisitor
 	{
 		n.getLeft().accept(this);
 		n.getRight().accept(this);
+
 		if(n.getRecord().getTSToken()==TSToken.SAND)
 		{
 			code.addLine(null, CASLInst.OR, n.getLeft().getReturnValueSymbol(), n.getRight().getReturnValueSymbol());
+			n.setReturnValueSymbol(n.getLeft().getReturnValueSymbol());
 		}
 		else if(n.getRecord().getTSToken()==TSToken.SSTAR)
 		{
+			code.addLine(null, CASLInst.LD, "GR1", n.getLeft().getReturnValueSymbol());
+			code.addLine(null, CASLInst.LD, "GR2", n.getLeft().getReturnValueSymbol());
 			code.addLine(null, CASLInst.CALL, "MULT");
+			code.addLine(null, CASLInst.LD, temporaryVariable.getNew(), "GR2");
+			n.setReturnValueSymbol(temporaryVariable.getLatest());
 		}
 		else
 		{
+			code.addLine(null, CASLInst.LD, "GR1", n.getLeft().getReturnValueSymbol());
+			code.addLine(null, CASLInst.LD, "GR2", n.getLeft().getReturnValueSymbol());
 			code.addLine(null, CASLInst.CALL, "DIV");
+			code.addLine(null, CASLInst.LD, temporaryVariable.getNew(), n.getRecord().getTSToken()==TSToken.SDIVD ? "GR2" : "GR1");
+			n.setReturnValueSymbol(temporaryVariable.getLatest());
 		}
-		n.setReturnValueSymbol(n.getLeft().getReturnValueSymbol());
 	}
 
 	@Override
@@ -385,16 +397,21 @@ public class ASTCompiler implements ASTVisitor
 	@Override
 	public void visit(ASTProcedureCallStatement n) throws ASTException
 	{
-
+		for(ASTExpressionNode e:n.getExpressions())
+		{
+			e.accept(this);
+			code.addLine(null, CASLInst.PUSH, e.getReturnValueSymbol());
+		}
+		code.addLine(null, CASLInst.CALL, n.getName());
 	}
 
 	@Override
 	public void visit(ASTProgram n) throws ASTException
 	{
 		code.addLine(n.getName(), CASLInst.START, "BEGIN");
-		n.getBlock().accept(this);
 		n.getCompoundStatement().accept(this);
-		code.addLine(null, CASLInst.END);
+		code.addLine(null, CASLInst.END, "// end main");
+		n.getBlock().accept(this);
 	}
 
 	@Override
@@ -411,7 +428,23 @@ public class ASTCompiler implements ASTVisitor
 	@Override
 	public void visit(ASTSubprogramDeclaration n) throws ASTException
 	{
+		labelTable.add(n.getName(), code.size());
+		code.addLine(n.getName(), CASLInst.START);
+		code.addLine(null, CASLInst.POP, temporaryVariable.getNew());
+		String ret=temporaryVariable.getLatest();
+		for(ASTParameter p:n.getParameters())
+		{
+			for(String s:p.getNames())
+			{
+				code.addLine(null, CASLInst.POP, temporaryVariable.getNew());
+				code.addLine(null, CASLInst.LD, s, temporaryVariable.getLatest());
+			}
+		}
+		code.addLine(null, CASLInst.PUSH, ret);
+
 		n.getCompoundStatement().accept(this);
+		code.addLine(null, CASLInst.RET);
+		code.addLine(null, CASLInst.END);
 	}
 
 	@Override
