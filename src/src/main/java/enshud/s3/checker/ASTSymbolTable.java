@@ -2,13 +2,14 @@ package enshud.s3.checker;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Optional;
 
-public class ASTFunctionTable
+public class ASTSymbolTable
 {
 	private ASTFunctionRecord global;
 	private ArrayList<ASTFunctionRecord> subprogram;
 
-	public ASTFunctionTable()
+	public ASTSymbolTable()
 	{
 		global=new ASTFunctionRecord();
 		subprogram=new ArrayList<>();
@@ -83,7 +84,12 @@ public class ASTFunctionTable
 
 	public ASTVariableTable getFunctionParameter(final String name)
 	{
-		ASTFunctionRecord r=subprogram.stream().filter(s->s.getName().equals(name)).findAny().get();
-		return r!=null ? r.getParameters() : null;
+		Optional<ASTFunctionRecord> r=subprogram.stream().filter(s->s.getName().equals(name)).findAny();
+		return r.isPresent() ? r.get().getParameters() : null;
+	}
+
+	public String toString()
+	{
+		return "Global "+global.toString()+subprogram.stream().map(ASTFunctionRecord::toString).reduce("", (joined, s)->joined+s+"\n");
 	}
 }
