@@ -4,7 +4,7 @@ public abstract class ASTVariable extends AST
 {
 	protected String name;
 	protected ASTEvalType evalType;
-	protected String returnValueSymbol;
+	protected String resultSymbol;
 
 	public ASTVariable(final Record record)
 	{
@@ -21,9 +21,9 @@ public abstract class ASTVariable extends AST
 		return evalType;
 	}
 
-	public String getReturnValueSymbol()
+	public String getResultSymbol()
 	{
-		return returnValueSymbol;
+		return resultSymbol;
 	}
 
 	public void setName(final String name)
@@ -36,8 +36,8 @@ public abstract class ASTVariable extends AST
 		this.evalType=evalType;
 	}
 
-	public void setReturnValueSymbol(final String returnValueSymbol)
+	public void setResultSymbol(final String resultSymbol)
 	{
-		this.returnValueSymbol=returnValueSymbol;
+		this.resultSymbol=resultSymbol;
 	}
 }

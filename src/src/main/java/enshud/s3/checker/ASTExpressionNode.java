@@ -3,7 +3,7 @@ package enshud.s3.checker;
 abstract public class ASTExpressionNode extends AST
 {
 	protected ASTEvalType evalType;
-	protected String returnValueSymbol;
+	protected String resultSymbol;
 
 	public ASTExpressionNode(final Record record)
 	{
@@ -15,9 +15,9 @@ abstract public class ASTExpressionNode extends AST
 		return evalType;
 	}
 
-	public String getReturnValueSymbol()
+	public String getResultSymbol()
 	{
-		return returnValueSymbol;
+		return resultSymbol;
 	}
 
 	public void setEvalType(final ASTEvalType evalType)
@@ -25,8 +25,8 @@ abstract public class ASTExpressionNode extends AST
 		this.evalType=evalType;
 	}
 
-	public void setReturnValueSymbol(String returnValueSymbol)
+	public void setResultSymbol(String resultSymbol)
 	{
-		this.returnValueSymbol=returnValueSymbol;
+		this.resultSymbol=resultSymbol;
 	}
 }
