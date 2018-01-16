@@ -87,5 +87,13 @@ public class ASTFunctionRecord
 	{
 		return localVariables;
 	}
+
+	public String toString()
+	{
+		String s="function "+name+"\n";
+		s+="parameter :\n"+parameters.toString()+"\n";
+		s+="local variable :\n"+localVariables.toString()+"\n";
+		return s;
+	}
 }
 
