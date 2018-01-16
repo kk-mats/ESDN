@@ -28,4 +28,9 @@ public class ASTIndexedVariable extends ASTVariable
 	{
 		return index;
 	}
+
+	public void setIndex(final ASTExpressionNode index)
+	{
+		this.index=index;
+	}
 }
