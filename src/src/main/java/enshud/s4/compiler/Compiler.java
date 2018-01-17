@@ -1,9 +1,7 @@
 package enshud.s4.compiler;
 
-import enshud.casl.CaslSimulator;
 import enshud.s3.checker.ASTChecker;
 import enshud.s3.checker.ASTConstructor;
-import enshud.s3.checker.ASTPrinter;
 
 public class Compiler {
 	/**
@@ -12,7 +10,7 @@ public class Compiler {
 	 */
 	public static void main(final String[] args) {
 		// Compilerを実行してcasを生成する
-		new Compiler().run("data/ts/normal04.ts", "tmp/out.cas");
+		new Compiler().run("data/ts/normal01.ts", "tmp/out.cas");
 		
 		// CaslSimulatorクラスを使ってコンパイルしたcasを，CASLアセンブラ & COMETシミュレータで実行する
 		//CaslSimulator.run("tmp/out.cas", "tmp/out.ans", "36", "48");
@@ -41,9 +39,13 @@ public class Compiler {
 		{
 			ASTChecker checker=new ASTChecker();
 			checker.run(c.getAST());
-			ASTCompiler compiler=new ASTCompiler(checker.getTable());
-			compiler.run(c.getAST());
-			System.out.print(compiler.toString());
+			AST2CASL translator=new AST2CASL();
+			System.out.println(checker.getTable().toString());
+			translator.run(c.getAST());
+			//System.out.print(translator.getIL().toString());
+			//ILCompiler compiler=new ILCompiler(checker.getTable());
+			//compiler.run(c.getAST());
+			//System.out.print(compiler.toString());
 		}
 
 	}

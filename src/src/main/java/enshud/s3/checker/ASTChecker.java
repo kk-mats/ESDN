@@ -3,6 +3,8 @@ package enshud.s3.checker;
 import enshud.s1.lexer.TSToken;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 public class ASTChecker implements ASTVisitor
 {
@@ -56,6 +58,7 @@ public class ASTChecker implements ASTVisitor
 				{
 					throw new SemErrorException(v);
 				}
+				v.setNames((ArrayList<String>)v.getNames().stream().map(s->table.getScope(scope, s)).collect(Collectors.toList()));
 			}
 		}
 
@@ -331,6 +334,7 @@ public class ASTChecker implements ASTVisitor
 		{
 			n.setEvalType(v.getEvalType());
 			n.setName(table.getScope(scope, n.getName()));
+			n.setLength(v.getLength());
 			return;
 		}
 		throw new SemErrorException(n);
@@ -376,6 +380,7 @@ public class ASTChecker implements ASTVisitor
 					}
 					r.addLocalVariable(s, v.getType());
 				}
+				v.setNames((ArrayList<String>)v.getNames().stream().map(s->table.getScope(scope, s)).collect(Collectors.toList()));
 			}
 		}
 		table.addRecord(r);

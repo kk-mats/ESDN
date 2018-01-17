@@ -2,8 +2,9 @@ package enshud.s3.checker;
 
 public abstract class ASTVariable extends AST
 {
-	protected String name;
 	protected ASTEvalType evalType;
+	protected String name;
+	protected int length=1;
 	protected String resultSymbol;
 
 	public ASTVariable(final Record record)
@@ -16,9 +17,9 @@ public abstract class ASTVariable extends AST
 		return name;
 	}
 
-	public ASTEvalType getEvalType()
+	public int getLength()
 	{
-		return evalType;
+		return length;
 	}
 
 	public String getResultSymbol()
@@ -26,9 +27,19 @@ public abstract class ASTVariable extends AST
 		return resultSymbol;
 	}
 
+	public ASTEvalType getEvalType()
+	{
+		return evalType;
+	}
+
 	public void setName(final String name)
 	{
 		this.name=name;
+	}
+
+	public void setLength(final int length)
+	{
+		this.length=length;
 	}
 
 	public void setEvalType(final ASTEvalType evalType)

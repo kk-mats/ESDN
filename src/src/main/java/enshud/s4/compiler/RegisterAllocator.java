@@ -2,8 +2,8 @@ package enshud.s4.compiler;
 
 public class RegisterAllocator
 {
-	public void getRegister()
-	{
-	}
+	String [] register=new String[8];
+
+
 
 }

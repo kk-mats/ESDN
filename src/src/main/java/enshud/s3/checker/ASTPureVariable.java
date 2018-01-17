@@ -1,13 +1,25 @@
 package enshud.s3.checker;
 
-import enshud.s1.lexer.TSToken;
-
 public class ASTPureVariable extends ASTVariable
 {
+	private int length=1;
+
 	public ASTPureVariable(final String name, final Record record)
 	{
 		super(record);
 		this.name=name;
+	}
+
+	public ASTPureVariable(final String name, final int length,  Record record)
+	{
+		super(record);
+		this.name=name;
+		this.length=length;
+	}
+
+	public int getLength()
+	{
+		return length;
 	}
 
 	@Override

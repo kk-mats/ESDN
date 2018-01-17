@@ -1,9 +1,9 @@
 package enshud.s2.parser;
 
-import java.util.ArrayList;
-
 import enshud.s1.lexer.TSToken;
 import enshud.s3.checker.ASTConstructor;
+
+import java.util.ArrayList;
 
 public class Parser {
 	/**
@@ -700,12 +700,12 @@ public class Parser {
 				{
 					if(t[i].toString().equals(list[1]))
 					{
-						TSTokens.add(t[i]);
+						TSTokens.addCode(t[i]);
 						break;
 					}
 				}
-				strings.add(list[0]);
-				lineNumber.add(Integer.parseInt(list[3]));
+				strings.addCode(list[0]);
+				lineNumber.addCode(Integer.parseInt(list[3]));
 				//System.out.println("  |"+list[0]+"\t"+t[i].toString()+"\t"+list[3]);
 			}
 			
