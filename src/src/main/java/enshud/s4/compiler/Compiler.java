@@ -34,19 +34,6 @@ public class Compiler {
 	 */
 	public void run(final String inputFileName, final String outputFileName)
 	{
-		ASTConstructor c=new ASTConstructor(inputFileName);
-		if(c.success())
-		{
-			ASTChecker checker=new ASTChecker();
-			checker.run(c.getAST());
-			AST2CASL translator=new AST2CASL();
-			System.out.println(checker.getTable().toString());
-			translator.run(c.getAST());
-			//System.out.print(translator.getIL().toString());
-			//ILCompiler compiler=new ILCompiler(checker.getTable());
-			//compiler.run(c.getAST());
-			//System.out.print(compiler.toString());
-		}
-
+		new ASTCompiler(inputFileName).compile();
 	}
 }

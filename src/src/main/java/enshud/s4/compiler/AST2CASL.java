@@ -3,6 +3,9 @@ package enshud.s4.compiler;
 import enshud.s1.lexer.TSToken;
 import enshud.s3.checker.*;
 
+import java.util.ArrayList;
+import java.util.Collections;
+
 public class AST2CASL implements ASTVisitor
 {
 	public static class Label
@@ -36,13 +39,25 @@ public class AST2CASL implements ASTVisitor
 	}
 
 	private CASL casl=new CASL();
+	private ArrayList<CASL> casllist=new ArrayList<>();
+	private ASTSymbolTable table;
 
-	public void run(final ASTProgram program)
+	public CASL getCasl()
+	{
+		return casllist.get(0);
+	}
+
+	public ArrayList<CASL> getCaslSet()
+	{
+		return casllist;
+	}
+
+	public void run(final ASTProgram program, final ASTSymbolTable table)
 	{
 		try
 		{
+			this.table=table;
 			program.accept(this);
-			System.out.print(casl.toString());
 		}
 		catch(ASTException e)
 		{
@@ -59,19 +74,25 @@ public class AST2CASL implements ASTVisitor
 
 	public void visit(ASTBlock n) throws ASTException
 	{
-		if(n.getSubprogramDeclarations()!=null)
-		{
-			for(ASTSubprogramDeclaration s:n.getSubprogramDeclarations())
-			{
-				s.accept(this);
-				casl.addCode(CASL.Inst.JUMP, "@R_"+s.getName());
-			}
-		}
+
 		if(n.getVariableDeclarations()!=null)
 		{
 			for(ASTVariableDeclaration v:n.getVariableDeclarations())
 			{
 				v.accept(this);
+			}
+		}
+
+		casllist.add(casl);
+		casl=new CASL();
+
+		if(n.getSubprogramDeclarations()!=null)
+		{
+			for(ASTSubprogramDeclaration s:n.getSubprogramDeclarations())
+			{
+				s.accept(this);
+				casllist.add(casl);
+				casl=new CASL();
 			}
 		}
 	}
@@ -209,6 +230,7 @@ public class AST2CASL implements ASTVisitor
 
 	public void visit(ASTInputStatement n) throws ASTException
 	{
+		casl.addCode(CASL.Inst.RPUSH);
 		if(n.getVariables()!=null)
 		{
 			for(ASTVariable v:n.getVariables())
@@ -230,6 +252,7 @@ public class AST2CASL implements ASTVisitor
 				casl.addCode(CASL.Inst.POP, v.getResultSymbol());
 			}
 		}
+		casl.addCode(CASL.Inst.RPOP);
 	}
 
 	public void visit(ASTOutputStatement n) throws ASTException
@@ -243,6 +266,7 @@ public class AST2CASL implements ASTVisitor
 
 			for(ASTExpressionNode e:n.getExpressions())
 			{
+				casl.addCode(CASL.Inst.RPUSH);
 				casl.addCode(CASL.Inst.PUSH, e.getResultSymbol());
 				switch(e.getEvalType())
 				{
@@ -262,9 +286,12 @@ public class AST2CASL implements ASTVisitor
 						break;
 					}
 				}
+				casl.addCode(CASL.Inst.RPOP);
 			}
 		}
+		casl.addCode(CASL.Inst.RPUSH);
 		casl.addCode(CASL.Inst.CALL, "WRTLN");
+		casl.addCode(CASL.Inst.RPOP);
 	}
 
 	public void visit(ASTParameter n) throws ASTException
@@ -274,6 +301,7 @@ public class AST2CASL implements ASTVisitor
 
 	public void visit(ASTProcedureCallStatement n) throws ASTException
 	{
+		casl.addCode(CASL.Inst.RPUSH);
 		if(n.getExpressions()!=null)
 		{
 			for(ASTExpressionNode e : n.getExpressions())
@@ -285,15 +313,23 @@ public class AST2CASL implements ASTVisitor
 				casl.addCode(CASL.Inst.PUSH, e.getResultSymbol());
 			}
 		}
-		casl.addCode(CASL.Inst.JUMP, n.getName());
-		casl.addCode("@R_"+n.getName());
+		for(ASTVariableTable.ASTVariableRecord r:table.getGlobalVariableUsedIn(n.getName()).getRecords())
+		{
+			casl.addCode(CASL.Inst.PUSH, r.getName());
+		}
+		casl.addCode(CASL.Inst.CALL, n.getName());
+		for(ASTVariableTable.ASTVariableRecord r:table.getGlobalVariableUsedIn(n.getName()).getRecords())
+		{
+			casl.addCode(CASL.Inst.POP, r.getName());
+		}
+		casl.addCode(CASL.Inst.RPOP);
 	}
 
 	public void visit(ASTProgram n) throws ASTException
 	{
 		casl.addCode(n.getName(), CASL.Inst.START);
 		n.getCompoundStatement().accept(this);
-		casl.addCode(CASL.Inst.JUMP, "@M_END");
+		casl.addCode(CASL.Inst.RET);
 		n.getBlock().accept(this);
 	}
 
@@ -304,8 +340,21 @@ public class AST2CASL implements ASTVisitor
 
 	public void visit(ASTSubprogramDeclaration n) throws ASTException
 	{
-		casl.addCode(n.getName());
+		casl.addCode(n.getName(), CASL.Inst.START);
+		String ret=Temporally.getNew();
+		casl.addCode(CASL.Inst.POP, ret);
+		ArrayList<ASTVariableTable.ASTVariableRecord> r=table.getGlobalVariableUsedIn(n.getName()).getRecords();
+		Collections.reverse(r);
+		r.forEach(s->casl.addCode(CASL.Inst.POP, s.getName()));
+		if(n.getParameters()!=null)
+		{
+			ArrayList<ASTParameter> p=n.getParameters();
+			Collections.reverse(p);
+			p.forEach(s->s.getNames().forEach(t->casl.addCode(CASL.Inst.POP, t)));
+		}
+		casl.addCode(CASL.Inst.PUSH, ret);
 		n.getCompoundStatement().accept(this);
+		casl.addCode(CASL.Inst.RET);
 		if(n.getVariableDeclaration()!=null)
 		{
 			for(ASTVariableDeclaration v:n.getVariableDeclaration())
@@ -313,7 +362,6 @@ public class AST2CASL implements ASTVisitor
 				v.accept(this);
 			}
 		}
-		casl.addCode(CASL.Inst.JUMP, "@R_"+n.getName());
 	}
 
 	public void visit(ASTVariableDeclaration n) throws ASTException

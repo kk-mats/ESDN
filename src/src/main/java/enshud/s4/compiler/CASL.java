@@ -142,7 +142,6 @@ public class CASL
 	public ArrayList<Code> getCodeSet()
 	{
 		ArrayList<Code> c=main;
-		c.add(new Code("@M_END", Inst.RET, new String[]{}));
 		c.addAll(storage);
 		c.addAll(constant);
 		c.add(new Code(Inst.END, new String[]{}));
@@ -158,5 +157,4 @@ public class CASL
 	{
 		return main.size();
 	}
-
 }
