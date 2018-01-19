@@ -6,35 +6,33 @@ import java.util.Optional;
 
 public class ASTSymbolTable
 {
-	private ASTFunctionRecord global;
-	private ArrayList<ASTFunctionRecord> subprogram;
+	private ArrayList<ASTFunctionRecord> table=new ArrayList<>();
 
 	public ASTSymbolTable()
 	{
-		global=new ASTFunctionRecord();
-		subprogram=new ArrayList<>();
+		table.add(new ASTFunctionRecord());
 	}
 
-	public boolean setGlobalName(final String name)
+	public boolean setGlobalFunctionName(final String name)
 	{
-		return global.setName(name);
+		return table.get(0).setName(name);
 	}
 
-	public boolean addGlobalParameter(final String name, final Record record)
+	public boolean addGlobalFunctionParameter(final String name, final Record record)
 	{
-		return global.addParameter(name, new ASTVariableType(record));
+		return table.get(0).addParameter(name, new ASTVariableType(record));
 	}
 
-	public boolean addGlobalVariable(final ASTVariableDeclaration v)
+	public boolean addDeclaredVariableOfGlobalFunction(final ASTVariableDeclaration v)
 	{
-		if(global.findBy(v.getNames()))
+		if(table.get(0).findBy(v.getNames()))
 		{
 			return false;
 		}
 
 		for(String s:v.getNames())
 		{
-			if(!global.addLocalVariable(s, v.getType()))
+			if(!table.get(0).addDeclaredVariable(s, v.getType()))
 			{
 				return false;
 			}
@@ -42,54 +40,72 @@ public class ASTSymbolTable
 		return true;
 	}
 
-	public boolean usedFunctionName(final String name)
+	public boolean isUsedFunctionName(final String name)
 	{
-		return global.getLocalVariables().findBy(name);
+		return table.get(0).getUsedGlobalVariables().findBy(name);
 	}
 
 	public void addRecord(final ASTFunctionRecord r)
 	{
-		subprogram.add(r);
+		table.add(r);
 	}
 
-	public ASTFunctionRecord getGlobal()
+	public ASTFunctionRecord getGlobalFunction()
 	{
-		return global;
+		return table.get(0);
 	}
 
-	public ArrayList<ASTFunctionRecord> getSubprogram()
+	public ArrayList<ASTFunctionRecord> getTable()
 	{
-		return subprogram;
+		return table;
 	}
 
 	public ASTVariableType getVariableType(final String name)
 	{
 		ASTVariableTable.ASTVariableRecord r;
-		if(subprogram.size()>0)
+		if(table.size()>1)
 		{
-			r=subprogram.get(subprogram.size()-1).getRecordOf(name);
+			r=table.get(table.size()-1).getRecordOf(name);
 			if(null!=r)
 			{
 				return r.getVariableType();
 			}
 		}
-		return (r=global.getRecordOf(name))!=null ? r.getVariableType() : null;
+		return (r=table.get(0).getRecordOf(name))!=null ? r.getVariableType() : null;
 	}
 
-	public String getScope(final ArrayDeque<String> scope, final String name)
+	public String getScope(final ArrayDeque<String> scope, final String variableName)
 	{
-		ASTFunctionRecord r=subprogram.stream().filter(s->(s.getName().equals(scope.getLast()) && s.findBy(name))).findAny().orElse(null);
-		return  r!=null ? scope.stream().reduce("", (joined, s)->joined+s+".")+name : global.getName()+"."+name;
+		ASTFunctionRecord r=table.stream().filter(s->(s.getName().equals(scope.getLast()) && s.findBy(variableName))).findAny().orElse(null);
+		String sn;
+		if(r!=null)
+		{
+			sn=scope.stream().reduce("", (joined, s)->joined+s+".")+variableName;
+		}
+		else
+		{
+			sn=table.get(0).getName()+"."+variableName;
+			table.stream().filter(f->f.getName().equals(scope.getLast()))
+					.findFirst()
+					.ifPresent(e->e.addUsedGlobalVariable(sn, getVariableType(variableName)));
+		}
+
+		return sn;
+	}
+
+	public ASTVariableTable getGlobalVariableUsedIn(final String functionName)
+	{
+		return table.stream().filter(f->f.getName().equals(functionName)).findFirst().get().getUsedGlobalVariables();
 	}
 
 	public ASTVariableTable getFunctionParameter(final String name)
 	{
-		Optional<ASTFunctionRecord> r=subprogram.stream().filter(s->s.getName().equals(name)).findAny();
+		Optional<ASTFunctionRecord> r=table.stream().filter(s->s.getName().equals(name)).findAny();
 		return r.isPresent() ? r.get().getParameters() : null;
 	}
 
 	public String toString()
 	{
-		return "Global "+global.toString()+subprogram.stream().map(ASTFunctionRecord::toString).reduce("", (joined, s)->joined+s+"\n");
+		return "Main "+table.stream().map(ASTFunctionRecord::toString).reduce("", (joined, s)->joined+s+"\n");
 	}
 }

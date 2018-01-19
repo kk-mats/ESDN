@@ -8,13 +8,8 @@ import java.util.stream.Collectors;
 
 public class ASTChecker implements ASTVisitor
 {
-	private ASTSymbolTable table;
+	private ASTSymbolTable table=new ASTSymbolTable();
 	private ArrayDeque<String> scope=new ArrayDeque<>();
-
-	public ASTChecker()
-	{
-		table=new ASTSymbolTable();
-	}
 
 	public ASTSymbolTable getTable()
 	{
@@ -54,7 +49,7 @@ public class ASTChecker implements ASTVisitor
 			for(ASTVariableDeclaration v:n.getVariableDeclarations())
 			{
 				v.accept(this);
-				if(!table.addGlobalVariable(v))
+				if(!table.addDeclaredVariableOfGlobalFunction(v))
 				{
 					throw new SemErrorException(v);
 				}
@@ -312,11 +307,11 @@ public class ASTChecker implements ASTVisitor
 	@Override
 	public void visit(ASTProgram n) throws ASTException
 	{
-		table.setGlobalName(n.getName());
+		table.setGlobalFunctionName(n.getName());
 		scope.addLast(n.getName());
 		for(String s:n.getNames())
 		{
-			if(!table.addGlobalParameter(s, n.getRecord()))
+			if(!table.addGlobalFunctionParameter(s, n.getRecord()))
 			{
 				throw new SemErrorException(n);
 			}
@@ -345,7 +340,7 @@ public class ASTChecker implements ASTVisitor
 	{
 		ASTFunctionRecord r=new ASTFunctionRecord();
 
-		if(table.usedFunctionName(n.getName()))
+		if(table.isUsedFunctionName(n.getName()))
 		{
 			throw new SemErrorException(n);
 		}
@@ -378,7 +373,7 @@ public class ASTChecker implements ASTVisitor
 					{
 						throw new SemErrorException(v);
 					}
-					r.addLocalVariable(s, v.getType());
+					r.addDeclaredVariable(s, v.getType());
 				}
 				v.setNames((ArrayList<String>)v.getNames().stream().map(s->table.getScope(scope, s)).collect(Collectors.toList()));
 			}
