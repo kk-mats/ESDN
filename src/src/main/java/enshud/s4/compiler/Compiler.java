@@ -1,7 +1,6 @@
 package enshud.s4.compiler;
 
-import enshud.s3.checker.ASTChecker;
-import enshud.s3.checker.ASTConstructor;
+import enshud.s1.lexer.Lexer;
 
 public class Compiler {
 	/**
@@ -10,7 +9,9 @@ public class Compiler {
 	 */
 	public static void main(final String[] args) {
 		// Compilerを実行してcasを生成する
-		new Compiler().run("data/ts/normal01.ts", "tmp/out.cas");
+		//new Compiler().run("data/ts/normal01.ts", "tmp/out.cas");
+		new Lexer().run("mytest.pas", "mytest.ts");
+		new Compiler().run("mytest.ts", "tmp/out.cas");
 		
 		// CaslSimulatorクラスを使ってコンパイルしたcasを，CASLアセンブラ & COMETシミュレータで実行する
 		//CaslSimulator.run("tmp/out.cas", "tmp/out.ans", "36", "48");
