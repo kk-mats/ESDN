@@ -91,15 +91,15 @@ public class ILOptimizer
 			BasicBlock from=null, next=null;
 			for(AbstractMap.SimpleEntry<String, String> p: path)
 			{
-				for(int i=0; i<graph.size(); ++i)
+				for(BasicBlock b:graph)
 				{
-					if(graph.get(i).name.equals(p.getKey()))
+					if(b.name.equals(p.getKey()))
 					{
-						from=graph.get(i);
+						from=b;
 					}
-					if(graph.get(i).name.equals(p.getValue()))
+					if(b.name.equals(p.getValue()))
 					{
-						next=graph.get(i);
+						next=b;
 					}
 					if(from!=null && next!=null)
 					{
