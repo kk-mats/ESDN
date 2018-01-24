@@ -9,9 +9,6 @@ import java.io.IOException;
 
 public class ASTCompiler
 {
-	private CASL code=new CASL();
-	private CASL storage=new CASL();
-	private CASL constant=new CASL();
 
 	private String inputFileName;
 
@@ -29,13 +26,16 @@ public class ASTCompiler
 			checker.run(constructor.getAST());
 			AST2CASL translator=new AST2CASL();
 			translator.run(constructor.getAST(), checker.getTable());
-			ILOptimizer optimizer=new ILOptimizer(translator.getCasl());
+			//ILOptimizer optimizer=new ILOptimizer(translator.getCasl());
 
 			try(FileWriter fw=new FileWriter(new File("tmp.txt")))
 			{
 				fw.write(checker.getTable().toString());
-				fw.write(translator.getCaslSet().stream().map(CASL::toString).reduce("", (joined, s)->joined+s+"\n\n"));
-				fw.write(optimizer.toString());
+
+				RegisterAllocator registerAllocator=new RegisterAllocator(translator.getCasl());
+				registerAllocator.run();
+				fw.write(registerAllocator.getCasl().toString());
+				fw.write(translator.getLibraries());
 			}
 			catch(IOException e)
 			{
