@@ -47,39 +47,40 @@ public class CASL
 		}
 	}
 
+
 	public static class Operand
 	{
-		private String[] operands;
+		private String[] elements;
 
 		public Operand(final String... operand)
 		{
-			this.operands=operand;
+			this.elements=operand;
 		}
 
 		public int length()
 		{
-			return operands.length;
+			return elements.length;
 		}
 
-		public String[] getOperands()
+		public String[] getElements()
 		{
-			return operands;
+			return elements;
 		}
 
 		public String toString()
 		{
-			for(int i=0; i<operands.length; ++i)
+			for(int i=0; i<elements.length; ++i)
 			{
-				operands[i]=operands[i].toUpperCase().replaceAll("\\.", "");
+				elements[i]=elements[i].toUpperCase().replaceAll("\\.", "");
 			}
-			return String.join(",", operands);
+			return String.join(",", elements);
 		}
 
 		public Operand join(final Operand r)
 		{
-			String[] ret=new String[operands.length+r.getOperands().length];
-			System.arraycopy(operands, 0, ret, 0, operands.length);
-			System.arraycopy(r.getOperands(), 0, ret, operands.length, r.getOperands().length);
+			String[] ret=new String[elements.length+r.getElements().length];
+			System.arraycopy(elements, 0, ret, 0, elements.length);
+			System.arraycopy(r.getElements(), 0, ret, elements.length, r.getElements().length);
 			return new Operand(ret);
 		}
 	}
@@ -128,13 +129,13 @@ public class CASL
 			String s=label.toUpperCase().replaceAll("\\.", "");
 			s=s+(s.length()<4 ? "\t\t" : "\t");
 			s+=inst.toString()+(operand.length()>0 ? inst.toString().length()<4 ? "\t\t" : "\t" : "");
-			if(operand.length()==2 && operand.operands[1].matches("\\A[-]?[0-9]+\\z") && inst!=Inst.LAD && inst!=Inst.PUSH)
+			if(operand.length()==2 && operand.elements[1].matches("\\A[-]?[0-9]+\\z") && inst!=Inst.LAD && inst!=Inst.PUSH)
 			{
-				s+=operand.operands[0]+",="+operand.operands[1];
+				s+=operand.elements[0]+",="+operand.elements[1];
 			}
-			else if(operand.length()==1 && operand.operands[0].matches("'.'") && inst==Inst.PUSH)
+			else if(operand.length()==1 && operand.elements[0].matches("'.'") && inst==Inst.PUSH)
 			{
-				s+="="+operand.operands[0];
+				s+="="+operand.elements[0];
 			}
 			else
 			{
@@ -156,7 +157,7 @@ public class CASL
 
 		public String[] getOperand()
 		{
-			return operand.operands;
+			return operand.elements;
 		}
 	}
 
@@ -235,49 +236,65 @@ public class CASL
 
 	}
 
+	public void addMain(final String label, final Inst inst, Operand operand)
+	{
+
+		switch(inst)
+		{
+			case PUSH:
+			{
+				if(operand.elements.length==1 && operand.elements[0].indexOf("@")==0)
+				{
+					operand=new Operand("0").join(operand);
+				}
+			}
+		}
+		main.add(new Code(label, inst, operand));
+	}
+
 	public void addCode(final Inst inst)
 	{
-		main.add(new Code(inst));
+		addMain("", inst, new Operand());
 	}
 
 	public void addCode(final Inst inst, final String r)
 	{
-		main.add(new Code(inst, new Operand(r)));
+		addMain("", inst, new Operand(r));
 	}
 
 	public void addCode(final Inst inst, final Operand r)
 	{
-		main.add(new Code(inst, r));
+		addMain("", inst, r);
 	}
 
 	public void addCode(final Inst inst, final String r1, final String r2)
 	{
-		main.add(new Code(inst, new Operand(r1, r2)));
+		addMain("", inst, new Operand(r1, r2));
 	}
 
 	public void addCode(final Inst inst, final String r1, final Operand r2)
 	{
-		main.add(new Code(inst, new Operand(r1).join(r2)));
+		addMain("", inst, new Operand(r1).join(r2));
 	}
 
 	public void addCode(final Inst inst, final Operand r1, final String r2)
 	{
-		main.add(new Code(inst, r1.join(new Operand(r2))));
+		addMain("", inst, r1.join(new Operand(r2)));
 	}
 
 	public void addCode(final Inst inst, final Operand r1, final Operand r2)
 	{
-		main.add(new Code(inst, r1.join(r2)));
+		addMain("", inst, r1.join(r2));
 	}
 
 	public void addCode(final String label)
 	{
-		main.add(new Code(label, Inst.NOP));
+		addMain(label, Inst.NOP, new Operand());
 	}
 
 	public void addCode(final String label, final Inst inst)
 	{
-		main.add(new Code(label, inst));
+		addMain(label, inst, new Operand());
 	}
 
 	public void insertCode(final int index, final Code code)

@@ -80,6 +80,7 @@ public class AST2CASL implements ASTVisitor
 		n.getExpression().accept(this);
 		if(n.getVariable() instanceof ASTIndexedVariable)
 		{
+			//casl.addCode(CASL.Inst.LD, );
 			casl.addCode(CASL.Inst.ST, n.getExpression().getResultSymbol(), n.getVariable().getResultSymbol());
 		}
 		else
@@ -152,8 +153,8 @@ public class AST2CASL implements ASTVisitor
 		casl.addCode(CASL.Inst.LD, left, n.getLeft().getResultSymbol());
 		if(n.getSign()==ASTSimpleExpression.NEGATIVE)
 		{
-			casl.addCode(CASL.Inst.XOR, left, "=#FFFF");
-			casl.addCode(CASL.Inst.ADDA, left, "=1");
+			casl.addCode(CASL.Inst.XOR, left, "#FFFF");
+			casl.addCode(CASL.Inst.ADDA, left, "1");
 		}
 		if(n.getRight()!=null)
 		{
@@ -212,7 +213,7 @@ public class AST2CASL implements ASTVisitor
 		{
 			n.getNotFactor().accept(this);
 			casl.addCode(CASL.Inst.LD, Temporally.getNew(), n.getNotFactor().getResultSymbol());
-			casl.addCode(CASL.Inst.XOR, Temporally.getLatest(), "=#FFFF");
+			casl.addCode(CASL.Inst.XOR, Temporally.getLatest(), "#FFFF");
 			n.setResultSymbol(new CASL.Operand(Temporally.getLatest()));
 		}
 		else if(n.getEvalType()==ASTEvalType.tString)
@@ -256,7 +257,7 @@ public class AST2CASL implements ASTVisitor
 	public void visit(ASTIndexedVariable n) throws ASTException
 	{
 		n.getIndex().accept(this);
-		n.setResultSymbol(new CASL.Operand("@"+n.getName()).join(n.getIndex().getResultSymbol()));
+		n.setResultSymbol(new CASL.Operand(n.getName()).join(n.getIndex().getResultSymbol()));
 	}
 
 	public void visit(ASTInputStatement n) throws ASTException
@@ -324,10 +325,6 @@ public class AST2CASL implements ASTVisitor
 				casl.addCode(CASL.Inst.PUSH, "LIBBUF");
 				casl.addCode(CASL.Inst.PUSH, "LIBLEN");
 				CASL.Operand operand=e.getResultSymbol();
-				if(operand.getOperands()[0].indexOf("@")==0)
-				{
-					operand=new CASL.Operand("0").join(operand);
-				}
 				switch(e.getEvalType())
 				{
 					case tInteger:
@@ -387,12 +384,12 @@ public class AST2CASL implements ASTVisitor
 			}
 			for(ASTExpressionNode e:n.getExpressions())
 			{
-				casl.addCode(CASL.Inst.PUSH, "0", e.getResultSymbol());
+				casl.addCode(CASL.Inst.PUSH, e.getResultSymbol());
 			}
 		}
 		for(ASTVariableTable.ASTVariableRecord r:table.getGlobalVariableUsedIn(n.getName()).getRecords())
 		{
-			casl.addCode(CASL.Inst.PUSH, "0", r.getName());
+			casl.addCode(CASL.Inst.PUSH, r.getName());
 		}
 		casl.addCode(CASL.Inst.CALL, n.getName());
 		for(ASTVariableTable.ASTVariableRecord r:table.getGlobalVariableUsedIn(n.getName()).getRecords())
@@ -443,7 +440,7 @@ public class AST2CASL implements ASTVisitor
 			Collections.reverse(p);
 			p.forEach(s->s.getNames().forEach(t->casl.addCode(CASL.Inst.POP, t)));
 		}
-		casl.addCode(CASL.Inst.PUSH, "0", ret);
+		casl.addCode(CASL.Inst.PUSH, ret);
 		n.getCompoundStatement().accept(this);
 		casl.addCode(CASL.Inst.RET);
 		if(n.getVariableDeclaration()!=null)
