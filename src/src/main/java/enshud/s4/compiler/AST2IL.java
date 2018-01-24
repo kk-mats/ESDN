@@ -1,9 +1,7 @@
 package enshud.s4.compiler;
 
-import enshud.s3.checker.*;
-
-public class AST2IL implements ASTVisitor
-{
+public class AST2IL //implements ASTVisitor
+{/*
 	public static class Label
 	{
 		private static int n=-1;
@@ -270,5 +268,5 @@ public class AST2IL implements ASTVisitor
 		il.addCode(IL.Code.Label(L2));
 		n.getCondition().accept(this);
 		il.addCode(IL.Code.IfGoto(n.getCondition().getResultSymbol(), IL.Op.Equal, "true", L1));
-	}
+	}*/
 }
