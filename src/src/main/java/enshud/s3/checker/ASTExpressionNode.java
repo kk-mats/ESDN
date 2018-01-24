@@ -1,9 +1,11 @@
 package enshud.s3.checker;
 
+import enshud.s4.compiler.CASL;
+
 abstract public class ASTExpressionNode extends AST
 {
 	protected ASTEvalType evalType;
-	protected String resultSymbol;
+	protected CASL.Operand resultSymbol;
 
 	public ASTExpressionNode(final Record record)
 	{
@@ -15,7 +17,7 @@ abstract public class ASTExpressionNode extends AST
 		return evalType;
 	}
 
-	public String getResultSymbol()
+	public CASL.Operand getResultSymbol()
 	{
 		return resultSymbol;
 	}
@@ -25,7 +27,7 @@ abstract public class ASTExpressionNode extends AST
 		this.evalType=evalType;
 	}
 
-	public void setResultSymbol(String resultSymbol)
+	public void setResultSymbol(final CASL.Operand resultSymbol)
 	{
 		this.resultSymbol=resultSymbol;
 	}

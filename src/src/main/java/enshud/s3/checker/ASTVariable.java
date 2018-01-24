@@ -1,11 +1,13 @@
 package enshud.s3.checker;
 
+import enshud.s4.compiler.CASL;
+
 public abstract class ASTVariable extends AST
 {
 	protected ASTEvalType evalType;
 	protected String name;
-	protected int length=1;
-	protected String resultSymbol;
+	protected int length;
+	protected CASL.Operand resultSymbol;
 
 	public ASTVariable(final Record record)
 	{
@@ -22,7 +24,7 @@ public abstract class ASTVariable extends AST
 		return length;
 	}
 
-	public String getResultSymbol()
+	public CASL.Operand getResultSymbol()
 	{
 		return resultSymbol;
 	}
@@ -47,7 +49,7 @@ public abstract class ASTVariable extends AST
 		this.evalType=evalType;
 	}
 
-	public void setResultSymbol(final String resultSymbol)
+	public void setResultSymbol(final CASL.Operand resultSymbol)
 	{
 		this.resultSymbol=resultSymbol;
 	}
