@@ -2,8 +2,6 @@ package enshud.s3.checker;
 
 public class ASTPureVariable extends ASTVariable
 {
-	private int length=1;
-
 	public ASTPureVariable(final String name, final Record record)
 	{
 		super(record);
@@ -15,11 +13,6 @@ public class ASTPureVariable extends ASTVariable
 		super(record);
 		this.name=name;
 		this.length=length;
-	}
-
-	public int getLength()
-	{
-		return length;
 	}
 
 	@Override

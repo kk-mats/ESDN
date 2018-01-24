@@ -9,6 +9,7 @@ public class ASTIndexedVariable extends ASTVariable
 		super(record);
 		this.name=name;
 		this.index=index;
+		this.length=1;
 	}
 
 	@Override
