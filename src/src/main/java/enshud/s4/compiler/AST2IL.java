@@ -158,22 +158,22 @@ public class AST2IL //implements ASTVisitor
 	{
 		n.getCondition().accept(this);
 		il.addCode(IL.Code.IfGoto(n.getCondition().getResultSymbol(), IL.Op.Equal, "false", Label.getNew()));
-		String label=Label.getLatest();
+		String address=Label.getLatest();
 		n.getThenStatement().accept(this);
 		il.addCode(IL.Code.Goto(Label.getNew()));
-		il.addCode(IL.Code.Label(label));
-		label=Label.getLatest();
+		il.addCode(IL.Code.Label(address));
+		address=Label.getLatest();
 		n.getElseStatement().accept(this);
-		il.addCode(IL.Code.Label(label));
+		il.addCode(IL.Code.Label(address));
 	}
 
 	public void visit(ASTIfThenStatement n) throws ASTException
 	{
 		n.getCondition().accept(this);
 		il.addCode(IL.Code.IfGoto(n.getCondition().getResultSymbol(), IL.Op.Equal, "false", Label.getNew()));
-		String label=Label.getLatest();
+		String address=Label.getLatest();
 		n.getThenStatement().accept(this);
-		il.addCode(IL.Code.Label(label));
+		il.addCode(IL.Code.Label(address));
 	}
 
 	public void visit(ASTIndexedVariable n) throws ASTException

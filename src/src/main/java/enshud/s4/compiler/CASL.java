@@ -47,41 +47,54 @@ public class CASL
 		}
 	}
 
+	public static class OperandElement
+	{
+		public enum Attribute
+		{
+			register, address, literal, integer, empty
+		}
+
+		private String element;
+		private Attribute attribute;
+
+		public static final OperandElement ofTrue=new OperandElement("1", Attribute.integer);
+		public static final OperandElement ofFalse=new OperandElement("0", Attribute.integer);
+
+		public OperandElement()
+		{
+			this.element="";
+			this.attribute=Attribute.empty;
+		}
+		public OperandElement(final String element, final Attribute attribute)
+		{
+			this.element=element;
+			this.attribute=attribute;
+		}
+	}
 
 	public static class Operand
 	{
-		private String[] elements;
+		private OperandElement[] elements;
 
-		public Operand(final String... operand)
+		public Operand(final OperandElement... elements)
 		{
-			this.elements=operand;
+			this.elements=elements;
 		}
 
-		public int length()
+		public Operand join(final OperandElement... elements)
 		{
-			return elements.length;
+			OperandElement[] newElements=new OperandElement[this.elements.length+elements.length];
+			System.arraycopy(this.elements, 0, newElements, 0, this.elements.length);
+			System.arraycopy(elements, 0, newElements, this.elements.length, elements.length);
+			return new Operand(newElements);
 		}
 
-		public String[] getElements()
+		public Operand join(final Operand operand)
 		{
-			return elements;
-		}
-
-		public String toString()
-		{
-			for(int i=0; i<elements.length; ++i)
-			{
-				elements[i]=elements[i].toUpperCase().replaceAll("\\.", "");
-			}
-			return String.join(",", elements);
-		}
-
-		public Operand join(final Operand r)
-		{
-			String[] ret=new String[elements.length+r.getElements().length];
-			System.arraycopy(elements, 0, ret, 0, elements.length);
-			System.arraycopy(r.getElements(), 0, ret, elements.length, r.getElements().length);
-			return new Operand(ret);
+			OperandElement[] newElements=new OperandElement[elements.length+operand.elements.length];
+			System.arraycopy(elements, 0, newElements, 0, elements.length);
+			System.arraycopy(operand.elements, 0, newElements, elements.length, operand.elements.length);
+			return new Operand(newElements);
 		}
 	}
 
@@ -89,7 +102,7 @@ public class CASL
 	{
 		private String label="";
 		private Inst inst;
-		private Operand operand=new Operand();
+		private Operand operand;
 		public static final int _true=1;
 		public static final int _false=0;
 
@@ -104,17 +117,17 @@ public class CASL
 			this.operand=operand;
 		}
 
-		public Code(final Inst inst, final String... operand)
+		public Code(final Inst inst, final OperandElement... elements)
 		{
 			this.inst=inst;
-			this.operand=new Operand(operand);
+			this.operand=new Operand(elements);
 		}
 
-		public Code(final String label, final Inst inst, final String... operand)
+		public Code(final String label, final Inst inst, final OperandElement... elements)
 		{
 			this.label=label;
 			this.inst=inst;
-			this.operand=new Operand(operand);
+			this.operand=new Operand(elements);
 		}
 
 		public Code(final String label, final Inst inst, final Operand operand)
@@ -128,21 +141,7 @@ public class CASL
 		{
 			String s=label.toUpperCase().replaceAll("\\.", "");
 			s=s+(s.length()<4 ? "\t\t" : "\t");
-			s+=inst.toString()+(operand.length()>0 ? inst.toString().length()<4 ? "\t\t" : "\t" : "");
-			if(operand.length()==2 && operand.elements[1].matches("\\A[-]?[0-9]+\\z") && inst!=Inst.LAD && inst!=Inst.PUSH)
-			{
-				s+=operand.elements[0]+",="+operand.elements[1];
-			}
-			else if(operand.length()==1 && operand.elements[0].matches("'.'") && inst==Inst.PUSH)
-			{
-				s+="="+operand.elements[0];
-			}
-			else
-			{
-				s+=operand.toString();
-			}
-
-			return s;
+		
 		}
 
 		public String getLabel()
@@ -155,9 +154,9 @@ public class CASL
 			return inst;
 		}
 
-		public String[] getOperand()
+		public Operand getOperand()
 		{
-			return operand.elements;
+			return operand;
 		}
 	}
 
@@ -243,9 +242,9 @@ public class CASL
 		{
 			case PUSH:
 			{
-				if(operand.elements.length==1 && operand.elements[0].indexOf("@")==0)
+				if(operand.elements.length==1 && operand.elements[0].attribute==OperandElement.Attribute.register)
 				{
-					operand=new Operand("0").join(operand);
+					operand=new Operand(new Operand("0", )).join(operand);
 				}
 			}
 		}
@@ -257,7 +256,7 @@ public class CASL
 		addMain("", inst, new Operand());
 	}
 
-	public void addCode(final Inst inst, final String r)
+	public void addCode(final Inst inst, final OperandElement r)
 	{
 		addMain("", inst, new Operand(r));
 	}
@@ -267,19 +266,19 @@ public class CASL
 		addMain("", inst, r);
 	}
 
-	public void addCode(final Inst inst, final String r1, final String r2)
+	public void addCode(final Inst inst, final OperandElement r1, final OperandElement r2)
 	{
 		addMain("", inst, new Operand(r1, r2));
 	}
 
-	public void addCode(final Inst inst, final String r1, final Operand r2)
+	public void addCode(final Inst inst, final OperandElement r1, final Operand r2)
 	{
 		addMain("", inst, new Operand(r1).join(r2));
 	}
 
-	public void addCode(final Inst inst, final Operand r1, final String r2)
+	public void addCode(final Inst inst, final Operand r1, final OperandElement r2)
 	{
-		addMain("", inst, r1.join(new Operand(r2)));
+		addMain("", inst, r1.join(r2));
 	}
 
 	public void addCode(final Inst inst, final Operand r1, final Operand r2)
@@ -287,14 +286,14 @@ public class CASL
 		addMain("", inst, r1.join(r2));
 	}
 
-	public void addCode(final String label)
+	public void addCode(final OperandElement label)
 	{
-		addMain(label, Inst.NOP, new Operand());
+		addMain(label.element, Inst.NOP, new Operand());
 	}
 
-	public void addCode(final String label, final Inst inst)
+	public void addCode(final OperandElement label, final Inst inst)
 	{
-		addMain(label, inst, new Operand());
+		addMain(label.element, inst, new Operand());
 	}
 
 	public void insertCode(final int index, final Code code)
@@ -302,14 +301,14 @@ public class CASL
 		main.add(index, code);
 	}
 
-	public void addStorage(final String label, final int n)
+	public void addStorage(final OperandElement label, final int n)
 	{
-		storage.add(new Code(label, Inst.DS, String.valueOf(n)));
+		storage.add(new Code(label.element, Inst.DS, new OperandElement(String.valueOf(n), OperandElement.Attribute.literal)));
 	}
 
-	public void addConstant(final String label, final String s)
+	public void addConstant(final OperandElement label, final OperandElement s)
 	{
-		constant.add(new Code(label, Inst.DC, s));
+		constant.add(new Code(label.element, Inst.DC, s));
 	}
 
 	public ArrayList<Code> getMain()
@@ -322,7 +321,7 @@ public class CASL
 		ArrayList<Code> c=main;
 		c.addAll(storage);
 		c.addAll(constant);
-		c.add(new Code(Inst.END, new String[]{}));
+		c.add(new Code(Inst.END, new Operand()));
 		return c;
 	}
 
