@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.EnumMap;
+import java.util.stream.Collectors;
 
 public class CASL
 {
@@ -31,6 +32,21 @@ public class CASL
 			return null;
 		}
 
+		public boolean isOperandTypeR1R2AndRAdrX()
+		{
+			return this==LD || this==ADDA || this==ADDL || this==SUBA || this==SUBL || this==AND || this==OR || this==XOR || this==CPA || this==CPL;
+		}
+
+		public boolean isOperandTypeRAdrX()
+		{
+			return this==ST || this==LAD || this==SLA || this==SRA || this==SLL || this==SRL;
+		}
+
+		public boolean isOperandTypeAdrX()
+		{
+			return this==JPL || this==JMI || this==JNZ || this==JZE || this==JOV || this==JUMP || this==PUSH;
+		}
+
 		public boolean hasNoOperand()
 		{
 			return this==Inst.RPOP || this==Inst.RPUSH || this==Inst.RET || this==Inst.NOP || this==Inst.START || this==Inst.END;
@@ -51,10 +67,21 @@ public class CASL
 	{
 		public enum Attribute
 		{
-			register, address, literal, integer, empty
+			register("Reg"), address("Adr"), literal("Lit"), integer("Int"), empty("Emp");
+
+			private String alias;
+			Attribute(final String alias)
+			{
+				this.alias=alias;
+			}
+
+			public String toString()
+			{
+				return "<"+alias+">";
+			}
 		}
 
-		private String element;
+		private String elementName;
 		private Attribute attribute;
 
 		public static final OperandElement ofTrue=new OperandElement("1", Attribute.integer);
@@ -62,13 +89,29 @@ public class CASL
 
 		public OperandElement()
 		{
-			this.element="";
+			this.elementName="";
 			this.attribute=Attribute.empty;
 		}
-		public OperandElement(final String element, final Attribute attribute)
+
+		public OperandElement(final String elementName, final Attribute attribute)
 		{
-			this.element=element;
+			this.elementName=elementName;
 			this.attribute=attribute;
+		}
+
+		public String getELementName()
+		{
+			return elementName;
+		}
+
+		public Attribute getAttribute()
+		{
+			return attribute;
+		}
+
+		public String toString()
+		{
+			return elementName+attribute.toString();
 		}
 	}
 
@@ -96,6 +139,31 @@ public class CASL
 			System.arraycopy(operand.elements, 0, newElements, elements.length, operand.elements.length);
 			return new Operand(newElements);
 		}
+
+		public int length()
+		{
+			return elements.length;
+		}
+
+		public OperandElement get(final int i)
+		{
+			return elements[i];
+		}
+
+		public OperandElement[] getElements()
+		{
+			return elements;
+		}
+
+		public void setElement(final int i, final OperandElement element)
+		{
+			elements[i]=element;
+		}
+
+		public String toString()
+		{
+			return String.join(",", Arrays.stream(elements).map(OperandElement::toString).collect(Collectors.toList()));
+		}
 	}
 
 	public static class Code
@@ -103,8 +171,6 @@ public class CASL
 		private String label="";
 		private Inst inst;
 		private Operand operand;
-		public static final int _true=1;
-		public static final int _false=0;
 
 		public Code(final Inst inst)
 		{
@@ -139,9 +205,10 @@ public class CASL
 
 		public String toString()
 		{
-			String s=label.toUpperCase().replaceAll("\\.", "");
+			String s=label;
 			s=s+(s.length()<4 ? "\t\t" : "\t");
-		
+			s+=inst.name()+(inst.name().length()<4 ? "\t\t" : "\t");
+			return s+operand.toString();
 		}
 
 		public String getLabel()
@@ -237,17 +304,36 @@ public class CASL
 
 	public void addMain(final String label, final Inst inst, Operand operand)
 	{
+		// convert integer and literal to appropriate text
 
-		switch(inst)
+		// if [Inst R1,R2] or [Inst R,Adr] form
+		if(inst.isOperandTypeR1R2AndRAdrX() && operand.length()==2)
 		{
-			case PUSH:
+			// if [Inst R,Adr] form
+			if(operand.elements[1].attribute==OperandElement.Attribute.literal)
 			{
-				if(operand.elements.length==1 && operand.elements[0].attribute==OperandElement.Attribute.register)
-				{
-					operand=new Operand(new Operand("0", )).join(operand);
-				}
+				operand.elements[1].elementName="="+operand.elements[1].elementName;
+				operand.elements[1].attribute=OperandElement.Attribute.address;
+			}
+			else if(operand.elements[1].attribute==OperandElement.Attribute.integer)
+			{
+				operand.elements[1].elementName="="+operand.elements[1].elementName;
+				operand.elements[1].attribute=OperandElement.Attribute.address;
 			}
 		}
+
+		if(inst.isOperandTypeRAdrX() && operand.elements[1].attribute!=OperandElement.Attribute.address)
+		{
+			operand.elements[1].elementName="="+operand.elements[1].elementName;
+			operand.elements[1].attribute=OperandElement.Attribute.address;
+		}
+
+		if(inst.isOperandTypeAdrX() && operand.elements[0].attribute!=OperandElement.Attribute.address)
+		{
+			operand.elements[0].elementName="="+operand.elements[0].elementName;
+			operand.elements[0].attribute=OperandElement.Attribute.address;
+		}
+
 		main.add(new Code(label, inst, operand));
 	}
 
@@ -288,12 +374,12 @@ public class CASL
 
 	public void addCode(final OperandElement label)
 	{
-		addMain(label.element, Inst.NOP, new Operand());
+		addMain(label.elementName, Inst.NOP, new Operand());
 	}
 
 	public void addCode(final OperandElement label, final Inst inst)
 	{
-		addMain(label.element, inst, new Operand());
+		addMain(label.elementName, inst, new Operand());
 	}
 
 	public void insertCode(final int index, final Code code)
@@ -303,12 +389,12 @@ public class CASL
 
 	public void addStorage(final OperandElement label, final int n)
 	{
-		storage.add(new Code(label.element, Inst.DS, new OperandElement(String.valueOf(n), OperandElement.Attribute.literal)));
+		storage.add(new Code(label.elementName, Inst.DS, new OperandElement(String.valueOf(n), OperandElement.Attribute.literal)));
 	}
 
 	public void addConstant(final OperandElement label, final OperandElement s)
 	{
-		constant.add(new Code(label.element, Inst.DC, s));
+		constant.add(new Code(label.elementName, Inst.DC, s));
 	}
 
 	public ArrayList<Code> getMain()
@@ -328,10 +414,5 @@ public class CASL
 	public String toString()
 	{
 		return getCodeSet().stream().map(Code::toString).reduce("", (joined, s)->joined+s+"\n");
-	}
-
-	public int size()
-	{
-		return main.size();
 	}
 }

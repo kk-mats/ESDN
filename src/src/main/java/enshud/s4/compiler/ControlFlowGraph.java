@@ -51,7 +51,7 @@ public class ControlFlowGraph
 			{
 				if(casl.getMain().get(cur).getInst().isJump()/* || casl.getMain().get(cur).getInst()==CASL.Inst.CALL*/)
 				{
-					edge.add(new AbstractMap.SimpleEntry<>(name, casl.getMain().get(cur).getOperand()[0]));
+					edge.add(new AbstractMap.SimpleEntry<>(name, casl.getMain().get(cur).getOperand().get(0).getELementName()));
 					if(casl.getMain().get(cur).getInst()!=CASL.Inst.JUMP)
 					{
 						edge.add(new AbstractMap.SimpleEntry<>(name, casl.getMain().get(cur+1).getLabel().isEmpty() ? String.valueOf(nblock+1) : casl.getMain().get(cur+1).getLabel()));
