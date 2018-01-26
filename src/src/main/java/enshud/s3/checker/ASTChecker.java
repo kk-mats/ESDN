@@ -10,6 +10,7 @@ public class ASTChecker implements ASTVisitor
 {
 	private ASTSymbolTable table=new ASTSymbolTable();
 	private ArrayDeque<String> scope=new ArrayDeque<>();
+	private boolean success=false;
 
 	public ASTSymbolTable getTable()
 	{
@@ -22,11 +23,22 @@ public class ASTChecker implements ASTVisitor
 		{
 			program.accept(this);
 			System.out.println("OK");
+			success=true;
 		}
 		catch(ASTException e)
 		{
 			System.err.println(e.toString());
 		}
+	}
+
+	public boolean success()
+	{
+		return success;
+	}
+
+	public boolean isValidLabel(final String label)
+	{
+		return Character.isUpperCase(label.charAt(0)) && label.length()<9;
 	}
 
 	@Override
@@ -222,6 +234,7 @@ public class ASTChecker implements ASTVisitor
 			{
 				throw new SemErrorException(n.getIndex());
 			}
+			table.registerInvalidLabel(table.getScope(scope, n.getName()));
 			n.setIndex(new ASTSimpleExpression(ASTSimpleExpression.POSITIVE, n.getIndex(), new ASTFactor(new Record(TSToken.SCONSTANT, String.valueOf(v.getOffset()), n.getRecord().getLineNumber())), new Record(TSToken.SMINUS, "-", n.getRecord().getLineNumber())));
 			((ASTSimpleExpression)n.getIndex()).getRight().setEvalType(ASTEvalType.tInteger);
 			n.setEvalType(v.getEvalType().toStandardType());
@@ -308,6 +321,10 @@ public class ASTChecker implements ASTVisitor
 	public void visit(ASTProgram n) throws ASTException
 	{
 		table.setGlobalFunctionName(n.getName());
+		if(!isValidLabel(n.getName()))
+		{
+			table.registerInvalidLabel(n.getName());
+		}
 		scope.addLast(n.getName());
 		for(String s:n.getNames())
 		{
@@ -327,6 +344,10 @@ public class ASTChecker implements ASTVisitor
 		ASTVariableType v=table.getVariableType(n.getName());
 		if(v!=null)
 		{
+			if(v.getEvalType().isArrayType())
+			{
+				table.registerInvalidLabel(n.getName());
+			}
 			n.setEvalType(v.getEvalType());
 			n.setName(table.getScope(scope, n.getName()));
 			n.setLength(v.getLength());
@@ -345,6 +366,10 @@ public class ASTChecker implements ASTVisitor
 			throw new SemErrorException(n);
 		}
 		r.setName(n.getName());
+		if(!isValidLabel(n.getName()))
+		{
+			table.registerInvalidLabel(n.getName());
+		}
 		scope.addLast(n.getName());
 
 		if(n.getParameters()!=null)

@@ -1,5 +1,6 @@
 package enshud.s3.checker;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 
 public class ASTFunctionRecord
@@ -8,6 +9,7 @@ public class ASTFunctionRecord
 	private ASTVariableTable parameters=new ASTVariableTable(); // parameters of this function
 	private ASTVariableTable declaredVariables=new ASTVariableTable(); // variables declared in this function
 	private ASTVariableTable usedGlobalVariables=new ASTVariableTable(); // global variables used in this function
+	private ArrayList<AbstractMap.SimpleEntry<String, String>> globalAndLocalVariableCorrespondence=new ArrayList<>();
 
 	public boolean findBy(final String name)
 	{
@@ -73,6 +75,21 @@ public class ASTFunctionRecord
 		return true;
 	}
 
+	public void addGlobalAndLocalVariableCorrespondence(final String global, final String local)
+	{
+		globalAndLocalVariableCorrespondence.add(new AbstractMap.SimpleEntry<>(global, local));
+	}
+
+	public String getLocalVariableBy(final String global)
+	{
+		return globalAndLocalVariableCorrespondence.stream().filter(p->p.getKey().equals(global)).map(AbstractMap.SimpleEntry::getValue).findFirst().orElse(global);
+	}
+
+	public boolean hasGlobalAndLocalVariableCorrespondenceOf(final String local)
+	{
+		return globalAndLocalVariableCorrespondence.stream().anyMatch(p->p.getValue().equals(local));
+	}
+
 	public String getName()
 	{
 		return name;
@@ -99,6 +116,7 @@ public class ASTFunctionRecord
 		s+="parameter :\n"+parameters.toString()+"\n";
 		s+="declared variable :\n"+declaredVariables.toString()+"\n";
 		s+="used global variable :\n"+usedGlobalVariables.toString()+"\n";
+		s+="GLCores :\n"+String.join(", ", globalAndLocalVariableCorrespondence.toString())+"\n";
 		return s;
 	}
 }

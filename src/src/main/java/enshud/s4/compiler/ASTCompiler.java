@@ -9,12 +9,14 @@ import java.io.IOException;
 
 public class ASTCompiler
 {
-
 	private String inputFileName;
+	public static final boolean debug=false;
+	private String outputFileName;
 
-	public ASTCompiler(final String inputFileName)
+	public ASTCompiler(final String inputFileName, final String outputFileName)
 	{
 		this.inputFileName=inputFileName;
+		this.outputFileName=outputFileName;
 	}
 
 	public void compile()
@@ -24,28 +26,40 @@ public class ASTCompiler
 		{
 			ASTChecker checker=new ASTChecker();
 			checker.run(constructor.getAST());
-			AST2CASL translator=new AST2CASL();
-			translator.run(constructor.getAST(), checker.getTable());
-			//ILOptimizer optimizer=new ILOptimizer(translator.getCasl());
-
-			try(FileWriter fw=new FileWriter(new File("tmp.txt")))
+			if(checker.success())
 			{
-				fw.write(checker.getTable().toString());
+				AST2CASL translator=new AST2CASL();
+				translator.run(constructor.getAST(), checker.getTable());
+				//ILOptimizer optimizer=new ILOptimizer(translator.getCasl());
 
-				RegisterAllocator registerAllocator=new RegisterAllocator(translator.getCasl());
-				registerAllocator.run();
-				fw.write(registerAllocator.getCasl().toString());
-				fw.write(translator.getLibraries());
-			}
-			catch(IOException e)
-			{
-				System.out.print(e);
-			}
+				try(FileWriter fw=new FileWriter(new File(outputFileName)))
+				{
+					if(debug)
+					{
+						fw.write(checker.getTable().toString());
+					}
+					for(CASL casl : translator.getCaslList())
+					{
+						RegisterAllocator registerAllocator=new RegisterAllocator(casl);
+						if(!debug)
+						{
+							registerAllocator.run();
+						}
+						fw.write(casl.toString());
+						fw.write("\n");
+					}
+					fw.write(translator.getLibraries());
+				}
+				catch(IOException e)
+				{
+					System.out.print(e);
+				}
 
-			//System.out.print(translator.getIL().toString());
-			//ILCompiler compiler=new ILCompiler(checker.getTable());
-			//compiler.run(constructor.getAST());
-			//System.out.print(compiler.toString());
+				//System.out.print(translator.getIL().toString());
+				//ILCompiler compiler=new ILCompiler(checker.getTable());
+				//compiler.run(constructor.getAST());
+				//System.out.print(compiler.toString());
+			}
 		}
 	}
 

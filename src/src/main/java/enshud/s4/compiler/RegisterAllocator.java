@@ -6,25 +6,24 @@ import java.util.stream.IntStream;
 
 public class RegisterAllocator
 {
-	public static class Register
+	public void run()
 	{
-		private String variable="";
-		private int priority=0;
-		private static int priorityCounter=0;
+		CASL.Operand operand;
 
-		public Register(){}
-
-		public Register(final String variable)
+		for(cur=0; cur<casl.getMain().size(); ++cur)
 		{
-			this.variable=variable;
-			++priorityCounter;
-			this.priority=priorityCounter;
+			operand=casl.getMain().get(cur).getOperand();
+
+			for(int i=0; i<operand.length(); ++i)
+			{
+				if(operand.get(i).getAttribute()==CASL.OperandElement.Attribute.register)
+				{
+					casl.getMain().get(cur).getOperand().setElement(i, allocate(operand.get(i).getELementName()));
+				}
+			}
 		}
 
-		public boolean isInUse()
-		{
-			return !variable.isEmpty();
-		}
+		IntStream.range(0, memory.size()).forEach(i->casl.addStorage(new CASL.OperandElement("MEM"+i, CASL.OperandElement.Attribute.address), 1));
 	}
 
 	private ControlFlowGraph controlFlowGraph;
@@ -42,22 +41,25 @@ public class RegisterAllocator
 		System.out.print(controlFlowGraph.toString());
 	}
 
-	public void run()
+	public static class Register
 	{
-		CASL.Operand operand;
-		for(cur=0; cur<casl.getMain().size(); ++cur)
+		private String variable="";
+		private int priority=0;
+		private int priorityCounter=0;
+
+		public Register(){}
+
+		public Register(final String variable)
 		{
-			operand=casl.getMain().get(cur).getOperand();
-			for(int i=0; i<operand.length(); ++i)
-			{
-				if(operand.get(i).getAttribute()==CASL.OperandElement.Attribute.register)
-				{
-					casl.getMain().get(cur).getOperand().setElement(i, allocate(operand.get(i).getELementName()));
-				}
-			}
+			this.variable=variable;
+			++priorityCounter;
+			this.priority=priorityCounter;
 		}
 
-		IntStream.range(0, memory.size()).forEach(i->casl.addStorage(new CASL.OperandElement("MEM"+i, CASL.OperandElement.Attribute.address), 1));
+		public boolean isInUse()
+		{
+			return !variable.isEmpty();
+		}
 	}
 
 	public CASL getCasl()
@@ -93,21 +95,6 @@ public class RegisterAllocator
 			registers[minIndex]=new Register(variable);
 			return new CASL.OperandElement(retReg, CASL.OperandElement.Attribute.register);
 		}
-
-		// registers[minIndex] has been allocated
-		/*
-		IntStream.range(0, memory.size())
-				.filter(registers[minIndex]::equals)
-				.findFirst()
-				.ifPresentOrElse(
-						i->casl.insertCode(cur, new CASL.Code(CASL.Inst.ST, new String[]{"GR"+minIndex, "MEM"+i})),
-						()->
-						{
-							casl.insertCode(cur, new CASL.Code(CASL.Inst.ST, new String[]{"GR"+minIndex, "MEM"+memory.size()}));
-							memory.add(registers[minIndex].variable);
-						}
-				);
-		*/
 
 		boolean memExists=false;
 		for(int i=0; i<memory.size(); i++)

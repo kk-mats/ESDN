@@ -7,7 +7,7 @@ public class Compiler {
 	 */
 	public static void main(final String[] args) {
 		// Compilerを実行してcasを生成する
-		new Compiler().run("data/ts/normal01.ts", "tmp/out.cas");
+		new Compiler().run("data/ts/normal02.ts", "tmp/out.cas");
 		//new Lexer().run("mytest.pas", "mytest.ts");
 		//new Compiler().run("mytest.ts", "tmp/out.cas");
 		
@@ -33,6 +33,6 @@ public class Compiler {
 	 */
 	public void run(final String inputFileName, final String outputFileName)
 	{
-		new ASTCompiler(inputFileName).compile();
+		new ASTCompiler(inputFileName, outputFileName).compile();
 	}
 }

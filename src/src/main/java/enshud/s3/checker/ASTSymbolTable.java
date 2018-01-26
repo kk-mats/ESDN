@@ -1,5 +1,6 @@
 package enshud.s3.checker;
 
+import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Optional;
@@ -7,6 +8,7 @@ import java.util.Optional;
 public class ASTSymbolTable
 {
 	private ArrayList<ASTFunctionRecord> table=new ArrayList<>();
+	private ArrayList<AbstractMap.SimpleEntry<String, String>> labelAliasTable=new ArrayList<>();
 
 	public ASTSymbolTable()
 	{
@@ -80,16 +82,20 @@ public class ASTSymbolTable
 		String sn;
 		if(r!=null)
 		{
+			// local variable
 			sn=scope.stream().reduce("", (joined, s)->joined+s+".")+variableName;
 		}
 		else
 		{
+			// global variable
 			sn=table.get(0).getName()+"."+variableName;
 			table.stream().filter(f->f.getName().equals(scope.getLast()))
-					.findFirst()
-					.ifPresent(e->e.addUsedGlobalVariable(sn, getVariableType(variableName)));
+					.findFirst().ifPresent(e->{
+				e.addUsedGlobalVariable(sn, getVariableType(variableName));
+				e.addGlobalAndLocalVariableCorrespondence(scope.getFirst()+"."+variableName, String.join(".", scope)+"."+variableName);
+				e.addDeclaredVariable(variableName, getVariableType(variableName));
+			});
 		}
-
 		return sn;
 	}
 
@@ -98,14 +104,43 @@ public class ASTSymbolTable
 		return table.stream().filter(f->f.getName().equals(functionName)).findFirst().get().getUsedGlobalVariables();
 	}
 
+	public String getLocalVariableOfGlobalVariableIn(final String functionName, final String global)
+	{
+		return table.stream().filter(f->f.getName().equals(functionName)).findFirst().get().getLocalVariableBy(global);
+	}
+
+	public boolean hasGlobalAndLocalVariableCorrespondenceOf(final String local)
+	{
+		return table.stream().map(f->f.hasGlobalAndLocalVariableCorrespondenceOf(local)).reduce(false, (before, b)->Boolean.logicalOr(before, b));
+	}
+
 	public ASTVariableTable getFunctionParameter(final String name)
 	{
 		Optional<ASTFunctionRecord> r=table.stream().filter(s->s.getName().equals(name)).findAny();
 		return r.isPresent() ? r.get().getParameters() : null;
 	}
 
+	public void registerInvalidLabel(final String label)
+	{
+		if(labelAliasTable.stream().noneMatch(p->p.getKey().equals(label)))
+		{
+			String newLabel="STL"+labelAliasTable.size();
+			labelAliasTable.add(new AbstractMap.SimpleEntry<>(label, newLabel));
+		}
+	}
+
+	// if label is invalid label name, return new label name.
+	// if label is valid label name, return label
+	public String getLabelAlias(final String label)
+	{
+		//return label;
+		return labelAliasTable.stream().filter(p->p.getKey().equals(label)).map(AbstractMap.SimpleEntry::getValue).findFirst().orElse(label);
+	}
+
 	public String toString()
 	{
-		return "Main "+table.stream().map(ASTFunctionRecord::toString).reduce("", (joined, s)->joined+s+"\n");
+		String str="Main "+table.stream().map(ASTFunctionRecord::toString).reduce("", (joined, s)->joined+s+"\n");
+		str+="Label Alias\n"+labelAliasTable.stream().map(AbstractMap.SimpleEntry::toString).reduce("", (joined, p)->joined+p+"\n")+"\n";
+		return str;
 	}
 }
