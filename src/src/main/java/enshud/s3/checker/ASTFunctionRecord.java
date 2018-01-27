@@ -2,6 +2,7 @@ package enshud.s3.checker;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 public class ASTFunctionRecord
 {
@@ -85,7 +86,7 @@ public class ASTFunctionRecord
 		return globalAndLocalVariableCorrespondence.stream().filter(p->p.getKey().equals(global)).map(AbstractMap.SimpleEntry::getValue).findFirst().orElse(global);
 	}
 
-	public boolean hasGlobalAndLocalVariableCorrespondenceOf(final String local)
+	public boolean hasGlobalVariableCorrespondenceOf(final String local)
 	{
 		return globalAndLocalVariableCorrespondence.stream().anyMatch(p->p.getValue().equals(local));
 	}
@@ -116,7 +117,7 @@ public class ASTFunctionRecord
 		s+="parameter :\n"+parameters.toString()+"\n";
 		s+="declared variable :\n"+declaredVariables.toString()+"\n";
 		s+="used global variable :\n"+usedGlobalVariables.toString()+"\n";
-		s+="GLCores :\n"+String.join(", ", globalAndLocalVariableCorrespondence.toString())+"\n";
+		s+="GLCores :\n\t"+String.join(",\n\t", globalAndLocalVariableCorrespondence.stream().map(AbstractMap.SimpleEntry::toString).collect(Collectors.toList()))+"\n";
 		return s;
 	}
 }

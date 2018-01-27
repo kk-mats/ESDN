@@ -10,7 +10,6 @@ import java.io.IOException;
 public class ASTCompiler
 {
 	private String inputFileName;
-	public static final boolean debug=false;
 	private String outputFileName;
 
 	public ASTCompiler(final String inputFileName, final String outputFileName)
@@ -34,14 +33,14 @@ public class ASTCompiler
 
 				try(FileWriter fw=new FileWriter(new File(outputFileName)))
 				{
-					if(debug)
+					if(Compiler.debug)
 					{
 						fw.write(checker.getTable().toString());
 					}
 					for(CASL casl : translator.getCaslList())
 					{
 						RegisterAllocator registerAllocator=new RegisterAllocator(casl);
-						if(!debug)
+						if(!Compiler.debug)
 						{
 							registerAllocator.run();
 						}

@@ -109,9 +109,9 @@ public class ASTSymbolTable
 		return table.stream().filter(f->f.getName().equals(functionName)).findFirst().get().getLocalVariableBy(global);
 	}
 
-	public boolean hasGlobalAndLocalVariableCorrespondenceOf(final String local)
+	public boolean hasGlobalVariableCorrespondenceOf(final String local)
 	{
-		return table.stream().map(f->f.hasGlobalAndLocalVariableCorrespondenceOf(local)).reduce(false, (before, b)->Boolean.logicalOr(before, b));
+		return table.stream().map(f->f.hasGlobalVariableCorrespondenceOf(local)).reduce(false, (before, b)->Boolean.logicalOr(before, b));
 	}
 
 	public ASTVariableTable getFunctionParameter(final String name)

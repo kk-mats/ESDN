@@ -43,6 +43,7 @@ public class AST2CASL implements ASTVisitor
 	private CASL casl=new CASL();
 	private ArrayList<CASL> caslList=new ArrayList<>();
 	private ASTSymbolTable table;
+	private boolean doOptimize=true;
 
 	public ArrayList<CASL> getCaslList()
 	{
@@ -72,16 +73,36 @@ public class AST2CASL implements ASTVisitor
 
 	public void visit(ASTAssignmentStatement n) throws ASTException
 	{
+		// if A[i]=V (A[i] is local variable correspond to global variable)
+		if(n.getVariable() instanceof ASTIndexedVariable)
+		{
+			if(table.hasGlobalVariableCorrespondenceOf(n.getVariable().getName()))
+			{
+				n.getExpression().accept(this);
+				((ASTIndexedVariable)n.getVariable()).getIndex().accept(this);
+				CASL.OperandElement ret=Temporally.getNew();
+				casl.addCode(CASL.Inst.LD, ret, new CASL.OperandElement("@"+n.getVariable().getName(), CASL.OperandElement.Attribute.register));
+				casl.addCode(CASL.Inst.ADDA, ret, ((ASTIndexedVariable)n.getVariable()).getIndex().getResultSymbol());
+				n.getVariable().setResultSymbol(new CASL.Operand(ret));
+				casl.addCode(CASL.Inst.ST, n.getExpression().getResultSymbol().join(new CASL.OperandElement("0", CASL.OperandElement.Attribute.address), ret));
+				return;
+			}
+		}
+
+		// if A=V
 		n.getVariable().accept(this);
 		n.getExpression().accept(this);
+
 		if(n.getVariable() instanceof ASTIndexedVariable)
 		{
 			casl.addCode(CASL.Inst.LD, Temporally.getNew(), n.getExpression().getResultSymbol());
 			casl.addCode(CASL.Inst.ST, Temporally.getLatest(), n.getVariable().getResultSymbol());
-		}else if(n.getVariable().getEvalType()==ASTEvalType.tChar)
+		}
+		else if(n.getVariable().getEvalType()==ASTEvalType.tChar)
 		{
 			casl.addCode(CASL.Inst.LAD, n.getVariable().getResultSymbol(), n.getExpression().getResultSymbol());
-		}else
+		}
+		else
 		{
 			casl.addCode(CASL.Inst.LD, n.getVariable().getResultSymbol(), n.getExpression().getResultSymbol());
 		}
@@ -169,6 +190,7 @@ public class AST2CASL implements ASTVisitor
 		n.getLeft().accept(this);
 		CASL.OperandElement left=Temporally.getNew();
 		casl.addCode(CASL.Inst.LD, left, n.getLeft().getResultSymbol());
+
 		if(n.getSign()==ASTSimpleExpression.NEGATIVE)
 		{
 			casl.addCode(CASL.Inst.XOR, left, new CASL.OperandElement("#FFFF", CASL.OperandElement.Attribute.literal));
@@ -278,7 +300,7 @@ public class AST2CASL implements ASTVisitor
 	public void visit(ASTIndexedVariable n) throws ASTException
 	{
 		n.getIndex().accept(this);
-		if(table.hasGlobalAndLocalVariableCorrespondenceOf(n.getName()))
+		if(table.hasGlobalVariableCorrespondenceOf(n.getName()))
 		{
 			CASL.OperandElement ret=Temporally.getNew();
 			casl.addCode(CASL.Inst.LD, ret, new CASL.OperandElement("@"+n.getName(), CASL.OperandElement.Attribute.register));

@@ -10,57 +10,56 @@ import java.util.stream.Collectors;
 
 public class CASL
 {
-	public enum Inst
+	public void addMain(final String label, final Inst inst, final Operand operand)
 	{
-		LD, ST, LAD,
-		ADDA, ADDL, SUBA, SUBL, AND, OR, XOR, CPA, CPL, SLA, SRA, SLL, SRL,
-		JPL, JMI, JNZ, JZE, JOV, JUMP,
-		PUSH, POP, RPUSH, RPOP,
-		CALL, RET,
-		SVC, NOP,
-		START, END, DS, DC, IN, OUT;
+		// convert integer and literal to appropriate text
 
-		public static Inst of(final TSToken token)
+		if(inst.hasNoOperand())
 		{
-			switch(token)
+			main.add(new Code(label, inst, operand));
+			return;
+		}
+
+		Operand newOperand=new Operand(Arrays.copyOf(operand.elements, operand.elements.length));
+		// if [Inst Adr,x] form
+		if(inst.isOperandTypeAdrX())
+		{
+			if(newOperand.elements[0].attribute==OperandElement.Attribute.literal)
 			{
-				case SPLUS:return ADDA;
-				case SMINUS:return SUBA;
-				case SOR:return OR;
-				case SAND:return AND;
+				newOperand.elements[0].elementName="="+newOperand.elements[0].elementName;
+				newOperand.elements[0].attribute=OperandElement.Attribute.address;
 			}
-			return null;
+			else if(newOperand.elements[0].attribute==OperandElement.Attribute.register)
+			{
+				newOperand.elements=new OperandElement[]{new OperandElement("0", OperandElement.Attribute.address), newOperand.elements[0]};
+			}
+		}
+		else
+		{
+			// if [Inst R1,R2] or [Inst R,Adr] form
+			if(inst.isOperandTypeR1R2AndRAdrX() && newOperand.length()==2)
+			{
+				// if [Inst R,Adr] form
+				if(newOperand.elements[1].attribute==OperandElement.Attribute.literal)
+				{
+					newOperand.elements[1].elementName="="+newOperand.elements[1].elementName;
+					newOperand.elements[1].attribute=OperandElement.Attribute.address;
+				}
+				else if(operand.elements[1].attribute==OperandElement.Attribute.integer)
+				{
+					newOperand.elements[1].elementName="="+newOperand.elements[1].elementName;
+					newOperand.elements[1].attribute=OperandElement.Attribute.address;
+				}
+			}
+
+			if(inst.isOperandTypeRAdrX() && newOperand.elements[1].attribute==OperandElement.Attribute.literal)
+			{
+				newOperand.elements[1].elementName="="+newOperand.elements[1].elementName;
+				newOperand.elements[1].attribute=OperandElement.Attribute.address;
+			}
 		}
 
-		public boolean isOperandTypeR1R2AndRAdrX()
-		{
-			return this==LD || this==ADDA || this==ADDL || this==SUBA || this==SUBL || this==AND || this==OR || this==XOR || this==CPA || this==CPL;
-		}
-
-		public boolean isOperandTypeRAdrX()
-		{
-			return this==ST || this==LAD || this==SLA || this==SRA || this==SLL || this==SRL;
-		}
-
-		public boolean isOperandTypeAdrX()
-		{
-			return this==JPL || this==JMI || this==JNZ || this==JZE || this==JOV || this==JUMP || this==PUSH;
-		}
-
-		public boolean hasNoOperand()
-		{
-			return this==Inst.RPOP || this==Inst.RPUSH || this==Inst.RET || this==Inst.NOP || this==Inst.START || this==Inst.END;
-		}
-
-		public static boolean anyMatch(final String s)
-		{
-			return Arrays.stream(values()).anyMatch(e->e.name().equals(s));
-		}
-
-		public boolean isJump()
-		{
-			return this==JPL || this==JMI || this==JNZ || this==JZE || this==JOV || this==JUMP;
-		}
+		main.add(new Code(label, inst, newOperand));
 	}
 
 	public static final String TrueString="1";//(true)";
@@ -123,53 +122,55 @@ public class CASL
 	private ArrayList<Code> storage=new ArrayList<>();
 	private ArrayList<Code> constant=new ArrayList<>();
 
-	public void addMain(final String label, final Inst inst, final Operand operand)
+	public enum Inst
 	{
-		// convert integer and literal to appropriate text
+		LD, ST, LAD, ADDA, ADDL, SUBA, SUBL, AND, OR, XOR, CPA, CPL, SLA, SRA, SLL, SRL, JPL, JMI, JNZ, JZE, JOV, JUMP, PUSH, POP, RPUSH, RPOP, CALL, RET, SVC, NOP, START, END, DS, DC, IN, OUT;
 
-		if(inst.hasNoOperand())
+		public static Inst of(final TSToken token)
 		{
-			main.add(new Code(label, inst, operand));
-			return;
+			switch(token)
+			{
+				case SPLUS:
+					return ADDA;
+				case SMINUS:
+					return SUBA;
+				case SOR:
+					return OR;
+				case SAND:
+					return AND;
+			}
+			return null;
 		}
 
-		Operand newOperand=new Operand(Arrays.copyOf(operand.elements, operand.elements.length));
-		// if [Inst Adr,x] form
-		if(inst.isOperandTypeAdrX())
+		public boolean isOperandTypeR1R2AndRAdrX()
 		{
-			if(newOperand.elements[0].attribute==OperandElement.Attribute.literal)
-			{
-				newOperand.elements[0].elementName="="+newOperand.elements[0].elementName;
-				newOperand.elements[0].attribute=OperandElement.Attribute.address;
-			}else if(newOperand.elements[0].attribute==OperandElement.Attribute.register)
-			{
-				newOperand.elements=new OperandElement[]{new OperandElement("0", OperandElement.Attribute.address), newOperand.elements[0]};
-			}
-		}else
-		{
-			// if [Inst R1,R2] or [Inst R,Adr] form
-			if(inst.isOperandTypeR1R2AndRAdrX() && newOperand.length()==2)
-			{
-				// if [Inst R,Adr] form
-				if(newOperand.elements[1].attribute==OperandElement.Attribute.literal)
-				{
-					newOperand.elements[1].elementName="="+newOperand.elements[1].elementName;
-					newOperand.elements[1].attribute=OperandElement.Attribute.address;
-				}else if(operand.elements[1].attribute==OperandElement.Attribute.integer)
-				{
-					newOperand.elements[1].elementName="="+newOperand.elements[1].elementName;
-					newOperand.elements[1].attribute=OperandElement.Attribute.address;
-				}
-			}
-
-			if(inst.isOperandTypeRAdrX() && newOperand.elements[1].attribute==OperandElement.Attribute.literal)
-			{
-				newOperand.elements[1].elementName="="+newOperand.elements[1].elementName;
-				newOperand.elements[1].attribute=OperandElement.Attribute.address;
-			}
+			return this==LD || this==ADDA || this==ADDL || this==SUBA || this==SUBL || this==AND || this==OR || this==XOR || this==CPA || this==CPL;
 		}
 
-		main.add(new Code(label, inst, newOperand));
+		public boolean isOperandTypeRAdrX()
+		{
+			return this==ST || this==LAD || this==SLA || this==SRA || this==SLL || this==SRL;
+		}
+
+		public boolean isOperandTypeAdrX()
+		{
+			return this==JPL || this==JMI || this==JNZ || this==JZE || this==JOV || this==JUMP || this==PUSH;
+		}
+
+		public boolean hasNoOperand()
+		{
+			return this==Inst.RPOP || this==Inst.RPUSH || this==Inst.RET || this==Inst.NOP || this==Inst.START || this==Inst.END;
+		}
+
+		public static boolean anyMatch(final String s)
+		{
+			return Arrays.stream(values()).anyMatch(e->e.name().equals(s));
+		}
+
+		public boolean isJump()
+		{
+			return this==JPL || this==JMI || this==JNZ || this==JZE || this==JOV || this==JUMP;
+		}
 	}
 
 	public void addCode(final Inst inst, final OperandElement r1, final OperandElement r2, final OperandElement r3)
@@ -324,12 +325,16 @@ public class CASL
 			inUse.set(lib.ordinal());
 			switch(lib)
 			{
-				case WRTINT:inUse.set(DIV.ordinal()); inUse.set(MOD.ordinal()); break;
+				case WRTINT:
+					inUse.set(DIV.ordinal());
+					inUse.set(MOD.ordinal());
+					break;
 				case MULT:
 				case DIV:
 				case MOD:
 				case RDINT:
-				case RDCH:useRETV=true;
+				case RDCH:
+					useRETV=true;
 			}
 		}
 
@@ -354,7 +359,7 @@ public class CASL
 
 			public String toString()
 			{
-				return ASTCompiler.debug ? "<"+alias+">" : "";
+				return Compiler.debug ? "<"+alias+">" : "";
 			}
 		}
 
