@@ -531,10 +531,12 @@ public class AST2CASL implements ASTVisitor
 				Collections.reverse(param.getNames());
 				param.getNames().forEach(t->casl.addCode(CASL.Inst.POP, new CASL.OperandElement("@"+t, CASL.OperandElement.Attribute.register)));
 			}
-			//p.forEach(s->s.getNames().forEach(t->casl.addCode(CASL.Inst.POP, new CASL.OperandElement("@"+t, CASL.OperandElement.Attribute.register))));
 		}
 		
+		casl.addCode(CASL.Inst.PUSH, ret);
 		n.getCompoundStatement().accept(this);
+		ret=Temporally.getNew();
+		casl.addCode(CASL.Inst.POP, ret);
 		
 		// push localized of global variables
 		if(setGLBUF)
@@ -552,7 +554,7 @@ public class AST2CASL implements ASTVisitor
 				}
 			}
 			casl.addCode(CASL.Inst.PUSH, new CASL.OperandElement("0", CASL.OperandElement.Attribute.address), Temporally.getLatest());
-			casl.addStorage(new CASL.OperandElement(glbuf, CASL.OperandElement.Attribute.address), glbufSize+1);
+			casl.addStorage(new CASL.OperandElement(glbuf, CASL.OperandElement.Attribute.address), glbufSize);
 		}
 		casl.addCode(CASL.Inst.PUSH, ret);
 		casl.addCode(CASL.Inst.RET);
