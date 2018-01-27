@@ -35,7 +35,8 @@ public class ASTCompiler
 				{
 					if(Compiler.debug)
 					{
-						fw.write(checker.getTable().toString());
+						System.out.print(checker.getTable().toString());
+						//fw.write(checker.getTable().toString());
 					}
 					for(CASL casl : translator.getCaslList())
 					{
