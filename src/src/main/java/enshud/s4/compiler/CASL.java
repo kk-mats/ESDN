@@ -345,10 +345,19 @@ public class CASL
 		if(inst.isOperandTypeAdrX())
 		{
 			// if [Inst Adr,x] form
-			if(inst==Inst.PUSH && newOperand.elements[0].attribute==OperandElement.Attribute.literal)
+			if(inst==Inst.PUSH)
 			{
-				main.add(new Code(Inst.LD, AST2CASL.Temporally.getNew(), new OperandElement("="+operand.elements[0].elementName, OperandElement.Attribute.address)));
-				newOperand=new Operand(new OperandElement("0", OperandElement.Attribute.address), AST2CASL.Temporally.getLatest());
+				if(newOperand.elements[0].attribute==OperandElement.Attribute.literal)
+				{
+					// if [PUSH lit,*]->[LD @,=lit], [PUSH 0,@]
+					main.add(new Code(Inst.LD, AST2CASL.Temporally.getNew(), new OperandElement("="+operand.elements[0].elementName, OperandElement.Attribute.address)));
+					newOperand=new Operand(new OperandElement("0", OperandElement.Attribute.address), AST2CASL.Temporally.getLatest());
+				}
+				else if(operand.length()==2 && !newOperand.elements[0].elementName.equals("0") && newOperand.elements[1].attribute==OperandElement.Attribute.register)
+				{
+					main.add(new Code(Inst.LD, AST2CASL.Temporally.getNew(), operand.elements[0], operand.elements[1]));
+					newOperand=new Operand(new OperandElement("0", OperandElement.Attribute.address), AST2CASL.Temporally.getLatest());
+				}
 			}
 			if(newOperand.elements[0].attribute==OperandElement.Attribute.literal)
 			{
@@ -414,13 +423,24 @@ public class CASL
 					}
 				}
 			}
+			else if(operand.length()==4)
+			{
+				// if [CPA|CPL adr,reg,adr,reg]->[LD @,adr,reg], [CPA|CPL @,adr,reg]
+				main.add(new Code(Inst.LD, AST2CASL.Temporally.getNew(), operand.elements[0], operand.elements[1]));
+				newOperand=new Operand(AST2CASL.Temporally.getLatest(), operand.elements[2], operand.elements[3]);
+			}
 			else if(operand.get(0).getAttribute()==OperandElement.Attribute.address)
 			{
-				// if [CPA|CPL adr,reg,int]->[LD @,adr,reg], [CPA|CPL @,=int]
 				if(operand.get(1).getAttribute()==OperandElement.Attribute.register && operand.get(2).getAttribute()==OperandElement.Attribute.integer)
 				{
+					// if [CPA|CPL adr,reg,int]->[LD @,adr,reg], [CPA|CPL @,=int]
 					main.add(new Code(Inst.LD, AST2CASL.Temporally.getNew(), operand.elements[0], operand.elements[1]));
 					newOperand=new Operand(AST2CASL.Temporally.getLatest(), new OperandElement("="+operand.elements[2], OperandElement.Attribute.address));
+				}
+				else if(operand.get(1).getAttribute()==OperandElement.Attribute.register && operand.get(2).getAttribute()==OperandElement.Attribute.register)
+				{
+					// if [CPA|CPL adr,reg,reg]->[CPA|CPL reg,adr,reg]
+					newOperand=new Operand(operand.elements[2], operand.elements[0], operand.elements[1]);
 				}
 			}
 		}

@@ -249,7 +249,8 @@ public class AST2CASL implements ASTVisitor
 		{
 			CASL.Library.use(CASL.Library.MOD);
 		}
-		n.setResultSymbol(new CASL.Operand(new CASL.OperandElement("RETV", CASL.OperandElement.Attribute.address)));
+		casl.addCode(CASL.Inst.LD, Temporally.getNew(), new CASL.OperandElement("RETV", CASL.OperandElement.Attribute.address));
+		n.setResultSymbol(new CASL.Operand(Temporally.getLatest()));
 	}
 	
 	public void visit(ASTFactor n) throws ASTException
