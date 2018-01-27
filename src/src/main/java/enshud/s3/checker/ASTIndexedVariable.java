@@ -11,7 +11,13 @@ public class ASTIndexedVariable extends ASTVariable
 		this.index=index;
 		this.length=1;
 	}
-
+	
+	@Override
+	public void convertToPointer()
+	{
+		isPointer=false;
+	}
+	
 	@Override
 	public void accept(final ASTVisitor visitor) throws ASTException
 	{

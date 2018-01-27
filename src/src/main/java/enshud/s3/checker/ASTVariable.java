@@ -7,6 +7,7 @@ public abstract class ASTVariable extends AST
 	protected ASTEvalType evalType;
 	protected String name;
 	protected int length;
+	protected boolean isPointer=false;
 	protected CASL.Operand resultSymbol;
 
 	public ASTVariable(final Record record)
@@ -33,6 +34,11 @@ public abstract class ASTVariable extends AST
 	{
 		return evalType;
 	}
+	
+	public boolean isPointer()
+	{
+		return isPointer;
+	}
 
 	public void setName(final String name)
 	{
@@ -48,6 +54,8 @@ public abstract class ASTVariable extends AST
 	{
 		this.evalType=evalType;
 	}
+	
+	public abstract void convertToPointer();
 
 	public void setResultSymbol(final CASL.Operand resultSymbol)
 	{

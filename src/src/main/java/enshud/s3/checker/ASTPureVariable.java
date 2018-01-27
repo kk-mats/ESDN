@@ -14,7 +14,13 @@ public class ASTPureVariable extends ASTVariable
 		this.name=name;
 		this.length=length;
 	}
-
+	
+	@Override
+	public void convertToPointer()
+	{
+		isPointer=true;
+	}
+	
 	@Override
 	public void accept(final ASTVisitor visitor) throws ASTException
 	{

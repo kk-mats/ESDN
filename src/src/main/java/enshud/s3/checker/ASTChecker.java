@@ -350,6 +350,16 @@ public class ASTChecker implements ASTVisitor
 			}
 			n.setEvalType(v.getEvalType());
 			n.setName(table.getScope(scope, n.getName()));
+			
+			// If n is a virtual parameter of subprogram for a global variable
+			// call f(p1,..., pn, &g1,..., &gm)
+			// func f(p1,..., pn, *v1,..., &vm)
+			// all v* are a virtual parameter for global variables
+			if(table.hasGlobalVariableCorrespondenceOf(n.getName()))
+			{
+				n.convertToPointer();
+			}
+			
 			n.setLength(v.getLength());
 			return;
 		}
