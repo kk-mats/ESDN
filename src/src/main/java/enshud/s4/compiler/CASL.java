@@ -80,7 +80,7 @@ public class CASL
 			library.put(RDSTR, "RDSTR\tSTART\n"+"\t\tPOP\t\tGR5\n"+"\t\tPOP\t\tGR1\n"+"\t\tPOP\t\tGR2\n"+"\t\tPUSH\t0,GR5\n"+"\t\tLAD\t\tGR4,0\t; GR4を初期化\n"+"\t\tIN\t\tINSTR,INLEN\n"+"LOOP\tCPA\t\tGR4,GR1\n"+"\t\tJZE\t\tEND\t; GR1で指定された文字数を超えたら終わり\n"+"\t\tCPA\t\tGR4,INLEN\n"+"\t\tJZE\t\tEND\t; 入力された文字数を超えたら終わり\n"+"\t\tLD\t\tGR5,GR2\n"+"\t\tADDA\tGR5,GR4\t; 文字の格納先番地を計算\n"+"\t\tLD\t\tGR3,INSTR,GR4\n"+"\t\tST\t\tGR3,0,GR5\n"+"\t\tLAD\t\tGR4,1,GR4\n"+"\t\tJUMP\tLOOP\n"+"END\t\tRET\n"+"INSTR\tDS\t\t256\n"+"INLEN\tDS\t\t1\n"+"\t\tEND");
 			library.put(RDLN, "RDLN\tSTART\n"+"\tIN\tINAREA,INLEN\n"+"\tRET\n"+"INAREA\tDS\t256\n"+"INLEN\tDS\t1\n"+"\tEND");
 			library.put(WRTINT, "WRTINT\tSTART\n"+"\t\tPOP\t\tGR5\n"+"\t\tPOP\t\tGR2\n"+"\t\tPOP\t\tGR4\t\t\t; LIBLENのアドレス\n"+"\t\tLD\t\tGR6,0,GR4\t; LIBLENの値\n"+"\t\tPOP\t\tGR7\t\t\t; LIBBUF\n"+"\t\tPUSH\t0,GR5\n"+"\t\tLD\t\tGR3,=0\t\t; GR3はインデックスとして用いる\n"+"\t\tLD\t\tGR5,GR2\n"+"\t\t; 数値データが負数である場合は，正の数に変換\n"+"\t\tCPA\t\tGR2,=0\n"+"\t\tJPL\t\tLOOP1\n"+"\t\tXOR\t\tGR2,=#FFFF\n"+"\t\tADDA\tGR2,=1\n"+"\t\t; 数値データを変換しながら，バッファに格納\n"+"LOOP1\tRPUSH\n"+"\t\tPUSH\tRETV\n"+"\t\tPUSH\t10\n"+"\t\tPUSH\t0,GR2\n"+"\t\tCALL\tMOD\n"+"\t\tRPOP\n"+"\t\tLD\t\tGR1,RETV\n"+"\t\tXOR\t\tGR1,=#0030\n"+"\t\tST\t\tGR1,BUFFER,GR3\n"+"\t\tLAD\t\tGR3,1,GR3\n"+"\t\tRPUSH\n"+"\t\tPUSH\tRETV\n"+"\t\tPUSH\t10\n"+"\t\tPUSH\t0,GR2\n"+"\t\tCALL\tDIV\n"+"\t\tRPOP\n"+"\t\tLD\t\tGR2,RETV\n"+"\t\tCPA\t\tGR2,=0\n"+"\t\tJNZ\t\tLOOP1\n"+"\t\t; 数値データが負数であれば，'-'を追加\n"+"\t\tCPA\t\tGR5,=0\n"+"\t\tJZE\t\tLOOP2\n"+"\t\tJPL\t\tLOOP2\n"+"\t\tLD\t\tGR1,='-'\n"+"\t\tST\t\tGR1,BUFFER,GR3\n"+"\t\tLAD\t\tGR3,1,GR3\n"+"\t\t; BUFFERを逆順にたどりながら，出力用バッファに格納\n"+"LOOP2\tLAD\t\tGR3,-1,GR3\n"+"\t\tLD\t\tGR1,BUFFER,GR3\n"+"\t\tLD\t\tGR2,GR7\n"+"\t\tADDA\tGR2,GR6\n"+"\t\tST\t\tGR1,0,GR2\n"+"\t\tLAD\t\tGR6,1,GR6\n"+"\t\tCPA\t\tGR3,=0\n"+"\t\tJNZ\t\tLOOP2\n"+"END\t\tST\t\tGR6,0,GR4\n"+"\t\tRET\n"+"BUFFER\tDS\t\t6\n"+"RETV\tDS\t\t1\n"+"\t\tEND");
-			library.put(WRTCH, "WRTCH\tSTART\n"+"\tPOP\t\tGR5\n"+"\tPOP\t\tGR1\t\t\t; 文字のアドレス\n"+"\tLD\t\tGR2,0,GR1\n"+"\tPOP\t\tGR4\t\t\t; LIBLENのアドレス\n"+"\tLD\t\tGR6,0,GR4\t; LIBLEN\n"+"\tPOP\t\tGR7\t\t\t; LIBBUF\n"+"\tPUSH\t0,GR5\n"+"\tADDA\tGR7,GR6\t\t; GR7に次の文字を格納する番地を代入\n"+"\tST\t\tGR2,0,GR7\n"+"\tLAD\t\tGR6,1,GR6\n"+"\tST\t\tGR6,0,GR4\n"+"\tRET\n"+"\tEND");
+			library.put(WRTCH, "WRTCH\tSTART\n"+"\tPOP\t\tGR5\n"+"\tPOP\t\tGR2\n"+"\tPOP\t\tGR4\t\t\t; LIBLENのアドレス\n"+"\tLD\t\tGR6,0,GR4\t; LIBLEN\n"+"\tPOP\t\tGR7\t\t\t; LIBBUF\n"+"\tPUSH\t0,GR5\n"+"\tADDA\tGR7,GR6\t\t; GR7に次の文字を格納する番地を代入\n"+"\tST\t\tGR2,0,GR7\n"+"\tLAD\t\tGR6,1,GR6\n"+"\tST\t\tGR6,0,GR4\n"+"\tRET\n"+"\tEND");
 			library.put(WRTSTR, "WRTSTR\tSTART\n"+"\t\tPOP\t\tGR3\n"+"\t\tPOP\t\tGR1\t\t\t; LEN\n"+"\t\tPOP\t\tGR2\t\t\t; STR\n"+"\t\tPOP\t\tGR4\t\t\t; LIBLENのアドレス\n"+"\t\tLD\t\tGR6,0,GR4\t; LIBLENの値\n"+"\t\tPOP\t\tGR7\t\t\t; LIBBUF\n"+"\t\tPUSH\t0,GR3\n"+"\t\tADDA\tGR7,GR6\t\t; GR7=&LIBBUF+LIBLEN\n"+"\t\tADDA\tGR6,GR1\t\t; GR6=LIBLEN+LEN\n"+" \t\tST\t\tGR6,0,GR4\t; LIBLENを更新\n"+"\t\tLD\t\tGR3,GR7\n"+"\t\tADDA\tGR3,GR1\t\t; GR3=&LIBBUF+LIBLEN+LEN\n"+"LOOP\tCPA\t\tGR3,GR7\n"+"\t\tJZE\t\tEND\n"+"\t\tLD\t\tGR4,0,GR2\n"+"\t\tST\t\tGR4,0,GR7\n"+"\t\tLAD\t\tGR2,1,GR2\n"+"\t\tLAD\t\tGR7,1,GR7\n"+"\t\tJUMP\tLOOP\n"+"END\t\tRET\n"+"\t\tEND");
 			library.put(WRTLN, "WRTLN\tSTART\n"+"\t\tPOP\t\tGR5\n"+"\t\tPOP\t\tGR4\t\t\t\t; LIBLENのアドレス\n"+"\t\tLD\t\tGR6,0,GR4\t\t; LIBLEN\n"+"\t\tPOP\t\tGR7\t\t\t\t; LIBBUF\n"+"\t\tPUSH\t0,GR5\n"+"\t\tST\t\tGR6,OUTLEN\n"+"\t\tLAD\t\tGR1,0\n"+"LOOP\tCPA\t\tGR1,OUTLEN\n"+"\t\tJZE\t\tEND\n"+"\t\tLD\t\tGR2,GR7\n"+"\t\tADDA\tGR2,GR1\n"+"\t\tLD\t\tGR3,0,GR2\n"+"\t\tST\t\tGR3,OUTSTR,GR1\n"+"\t\tLAD\t\tGR1,1,GR1\n"+"\t\tJUMP\tLOOP\n"+"END\t\tOUT\t\tOUTSTR,OUTLEN\n"+"\t\tLAD\t\tGR6,0\t\t\t; 文字列を出力して，GR6を初期化\n"+"\t\tST\t\tGR6,0,GR4\n"+"\t\tRET\n"+"OUTSTR\tDS\t\t256\n"+"OUTLEN\tDS\t\t1\n"+"\tEND");
 		}
@@ -340,9 +340,16 @@ public class CASL
 		}
 		
 		Operand newOperand=new Operand(Arrays.copyOf(operand.elements, operand.elements.length));
-		// if [Inst Adr,x] form
+		
+		
 		if(inst.isOperandTypeAdrX())
 		{
+			// if [Inst Adr,x] form
+			if(inst==Inst.PUSH && newOperand.elements[0].attribute==OperandElement.Attribute.literal)
+			{
+				main.add(new Code(Inst.LD, AST2CASL.Temporally.getNew(), new OperandElement("="+operand.elements[0].elementName, OperandElement.Attribute.address)));
+				newOperand=new Operand(new OperandElement("0", OperandElement.Attribute.address), AST2CASL.Temporally.getLatest());
+			}
 			if(newOperand.elements[0].attribute==OperandElement.Attribute.literal)
 			{
 				newOperand.elements[0].elementName="="+newOperand.elements[0].elementName;
@@ -378,21 +385,42 @@ public class CASL
 			}
 		}
 		
-		if((inst==Inst.CPA || inst==Inst.CPL) && operand.length()==2)
+		if(inst==Inst.CPA || inst==Inst.CPL)
 		{
-			if(operand.get(0).getAttribute()!=OperandElement.Attribute.register)
+			if(operand.length()==2)
 			{
-				// if CPA|CPL int,reg
-				if(operand.get(0).getAttribute()==OperandElement.Attribute.register)
+				if(operand.get(0).getAttribute()!=OperandElement.Attribute.register)
 				{
-					newOperand.setElement(0, operand.get(1));
-					newOperand.setElement(1, new OperandElement("="+operand.get(0).elementName, OperandElement.Attribute.address));
+					if(operand.get(1).getAttribute()==OperandElement.Attribute.register)
+					{
+						newOperand.setElement(0, operand.get(1));
+						if(operand.get(1).getAttribute()==OperandElement.Attribute.integer)
+						{
+							// if [CPA|CPL int,reg] -> [CPA|CPL reg,=int]
+							newOperand.setElement(1, new OperandElement("="+operand.get(0).elementName, OperandElement.Attribute.address));
+						}
+						else
+						{
+							// if [CPA|CPL adr,reg] -> [CPA|CPL reg,adr]
+							newOperand.setElement(1, new OperandElement(operand.get(0).elementName, OperandElement.Attribute.address));
+						}
+					}
+					else if(operand.get(0).getAttribute()==OperandElement.Attribute.integer && operand.get(0).getAttribute()==OperandElement.Attribute.integer)
+					{
+						// if [CPA|CPL int,int] -> [LAD @,int], [CPA|CPL @,=int]
+						main.add(new Code(Inst.LAD, AST2CASL.Temporally.getNew(), operand.get(0)));
+						newOperand.elements[0]=AST2CASL.Temporally.getLatest();
+						newOperand.elements[0].attribute=OperandElement.Attribute.register;
+					}
 				}
-				else if(operand.get(0).getAttribute()==OperandElement.Attribute.integer && operand.get(0).getAttribute()==OperandElement.Attribute.integer)
+			}
+			else if(operand.get(0).getAttribute()==OperandElement.Attribute.address)
+			{
+				// if [CPA|CPL adr,reg,int]->[LD @,adr,reg], [CPA|CPL @,=int]
+				if(operand.get(1).getAttribute()==OperandElement.Attribute.register && operand.get(2).getAttribute()==OperandElement.Attribute.integer)
 				{
-					main.add(new Code(Inst.LAD, AST2CASL.Temporally.getNew(), operand.get(0)));
-					newOperand.elements[0]=AST2CASL.Temporally.getLatest();
-					newOperand.elements[0].attribute=OperandElement.Attribute.register;
+					main.add(new Code(Inst.LD, AST2CASL.Temporally.getNew(), operand.elements[0], operand.elements[1]));
+					newOperand=new Operand(AST2CASL.Temporally.getLatest(), new OperandElement("="+operand.elements[2], OperandElement.Attribute.address));
 				}
 			}
 		}

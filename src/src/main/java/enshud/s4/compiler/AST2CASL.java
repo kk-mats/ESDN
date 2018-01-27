@@ -100,7 +100,7 @@ public class AST2CASL implements ASTVisitor
 		}
 		else if(n.getVariable().getEvalType()==ASTEvalType.tChar)
 		{
-			casl.addCode(CASL.Inst.LAD, n.getVariable().getResultSymbol(), n.getExpression().getResultSymbol());
+			casl.addCode(CASL.Inst.LD, n.getVariable().getResultSymbol(), n.getExpression().getResultSymbol());
 		}
 		else
 		{
@@ -247,7 +247,6 @@ public class AST2CASL implements ASTVisitor
 		{
 			CASL.Library.use(CASL.Library.MOD);
 		}
-		
 		n.setResultSymbol(new CASL.Operand(new CASL.OperandElement("RETV", CASL.OperandElement.Attribute.address)));
 	}
 	
@@ -267,7 +266,7 @@ public class AST2CASL implements ASTVisitor
 		{
 			n.getNotFactor().accept(this);
 			casl.addCode(CASL.Inst.LD, Temporally.getNew(), n.getNotFactor().getResultSymbol());
-			casl.addCode(CASL.Inst.XOR, Temporally.getLatest(), new CASL.OperandElement("#FFFF", CASL.OperandElement.Attribute.literal));
+			casl.addCode(CASL.Inst.XOR, Temporally.getLatest(), new CASL.OperandElement("=#FFFF", CASL.OperandElement.Attribute.address));
 			n.setResultSymbol(new CASL.Operand(Temporally.getLatest()));
 		}
 		else if(n.getEvalType()==ASTEvalType.tString)
@@ -527,7 +526,7 @@ public class AST2CASL implements ASTVisitor
 		{
 			ArrayList<ASTParameter> p=n.getParameters();
 			Collections.reverse(p);
-			p.forEach(s->s.getNames().forEach(t->casl.addCode(CASL.Inst.POP, new CASL.OperandElement(t, CASL.OperandElement.Attribute.register))));
+			p.forEach(s->s.getNames().forEach(t->casl.addCode(CASL.Inst.POP, new CASL.OperandElement("@"+t, CASL.OperandElement.Attribute.register))));
 		}
 		
 		n.getCompoundStatement().accept(this);
