@@ -23,6 +23,11 @@ public class ASTParameter extends AST
 	{
 		return names;
 	}
+	
+	public void setName(final int i, final String name)
+	{
+		names.set(i, name);
+	}
 
 	public ASTEvalType getEvalType()
 	{

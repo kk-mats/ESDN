@@ -3,6 +3,7 @@ package enshud.s4.compiler;
 import enshud.s1.lexer.TSToken;
 import enshud.s3.checker.*;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -46,6 +47,7 @@ public class AST2CASL implements ASTVisitor
 	private CASL casl=new CASL();
 	private ArrayList<CASL> caslList=new ArrayList<>();
 	private ASTSymbolTable table;
+	private ArrayDeque<String> scope=new ArrayDeque<>();
 	private boolean doOptimize=true;
 	
 	public ArrayList<CASL> getCaslList()
@@ -462,7 +464,8 @@ public class AST2CASL implements ASTVisitor
 		ArrayList<ASTVariableTable.ASTVariableRecord> globalVariables=table.getGlobalVariableUsedIn(n.getName()).getRecords();
 		for(ASTVariableTable.ASTVariableRecord r : globalVariables)
 		{
-			casl.addCode(CASL.Inst.PUSH, r.getEvalType().isArrayType() ? new CASL.OperandElement(table.getLabelAlias(r.getName()), CASL.OperandElement.Attribute.address) : new CASL.OperandElement("@"+r.getName(), CASL.OperandElement.Attribute.register));
+			String local=table.getLocalVariableOfGlobalVariableIn(scope.getLast(), r.getName());
+			casl.addCode(CASL.Inst.PUSH, r.getEvalType().isArrayType() ? new CASL.OperandElement(table.getLabelAlias(local), CASL.OperandElement.Attribute.address) : new CASL.OperandElement("@"+local, CASL.OperandElement.Attribute.register));
 		}
 		
 		casl.addCode(CASL.Inst.CALL, new CASL.OperandElement(table.getLabelAlias(n.getName()), CASL.OperandElement.Attribute.address));
@@ -484,6 +487,7 @@ public class AST2CASL implements ASTVisitor
 	
 	public void visit(ASTProgram n) throws ASTException
 	{
+		scope.addLast(n.getName());
 		casl.addCode(new CASL.OperandElement(table.getLabelAlias(n.getName()), CASL.OperandElement.Attribute.address), CASL.Inst.START);
 		n.getCompoundStatement().accept(this);
 		casl.addCode(CASL.Inst.RET);
@@ -502,6 +506,7 @@ public class AST2CASL implements ASTVisitor
 	
 	public void visit(ASTSubprogramDeclaration n) throws ASTException
 	{
+		scope.addLast(n.getName());
 		casl.addCode(new CASL.OperandElement(table.getLabelAlias(n.getName()), CASL.OperandElement.Attribute.address), CASL.Inst.START);
 		
 		CASL.OperandElement ret=Temporally.getNew();
@@ -558,6 +563,8 @@ public class AST2CASL implements ASTVisitor
 		}
 		casl.addCode(CASL.Inst.PUSH, ret);
 		casl.addCode(CASL.Inst.RET);
+		
+		scope.removeLast();
 		
 		if(n.getVariableDeclaration()!=null)
 		{

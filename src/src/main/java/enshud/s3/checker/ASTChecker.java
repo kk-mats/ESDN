@@ -281,7 +281,6 @@ public class ASTChecker implements ASTVisitor
 	@Override
 	public void visit(ASTParameter n) throws ASTException
 	{
-
 	}
 	
 	public void visit(ASTProcedureCallStatement n) throws ASTException
@@ -386,13 +385,14 @@ public class ASTChecker implements ASTVisitor
 		{
 			for(ASTParameter p:n.getParameters())
 			{
-				for(String s:p.getNames())
+				for(int i=0; i<p.getNames().size(); ++i)
 				{
-					if(r.findBy(s))
+					if(r.findBy(p.getNames().get(i)))
 					{
 						throw new SemErrorException(p);
 					}
-					r.addParameter(s, p.getStandardType());
+					r.addParameter(p.getNames().get(i), p.getStandardType());
+					p.getNames().set(i, table.getScope(scope, p.getNames().get(i)));
 				}
 			}
 		}
