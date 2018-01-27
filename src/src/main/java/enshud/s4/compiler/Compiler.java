@@ -17,7 +17,7 @@ public class Compiler {
 	 * @param inputFileName 入力tsファイル名
 	 * @param outputFileName 出力casファイル名
 	 */
-	public static final boolean debug=false;
+	public static final boolean debug=true;
 
 	/**
 	 * サンプルmainメソッド．
@@ -26,7 +26,7 @@ public class Compiler {
 	public static void main(final String[] args)
 	{
 		// Compilerを実行してcasを生成する
-		new Compiler().run("data/ts/normal01.ts", "tmp/out.cas");
+		new Compiler().run("data/ts/normal02.ts", "tmp/out.cas");
 		//new enshud.s1.lexer.Lexer().run("mytest.pas", "mytest.ts");
 		//new Compiler().run("mytest.ts", "tmp/out.cas");
 
