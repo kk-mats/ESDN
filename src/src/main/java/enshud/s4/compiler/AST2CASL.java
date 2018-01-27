@@ -526,7 +526,12 @@ public class AST2CASL implements ASTVisitor
 		{
 			ArrayList<ASTParameter> p=n.getParameters();
 			Collections.reverse(p);
-			p.forEach(s->s.getNames().forEach(t->casl.addCode(CASL.Inst.POP, new CASL.OperandElement("@"+t, CASL.OperandElement.Attribute.register))));
+			for(ASTParameter param : p)
+			{
+				Collections.reverse(param.getNames());
+				param.getNames().forEach(t->casl.addCode(CASL.Inst.POP, new CASL.OperandElement("@"+t, CASL.OperandElement.Attribute.register)));
+			}
+			//p.forEach(s->s.getNames().forEach(t->casl.addCode(CASL.Inst.POP, new CASL.OperandElement("@"+t, CASL.OperandElement.Attribute.register))));
 		}
 		
 		n.getCompoundStatement().accept(this);
