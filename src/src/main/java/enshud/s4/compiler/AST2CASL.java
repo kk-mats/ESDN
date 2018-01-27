@@ -6,7 +6,6 @@ import enshud.s3.checker.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.stream.Collectors;
 
 public class AST2CASL implements ASTVisitor
 {
@@ -14,50 +13,51 @@ public class AST2CASL implements ASTVisitor
 	{
 		private static int n=-1;
 		private static String prefix="L";
+		
 		public static CASL.OperandElement getNew()
 		{
 			++n;
 			return new CASL.OperandElement(prefix+n, CASL.OperandElement.Attribute.address);
 		}
+		
 		public static CASL.OperandElement getLatest()
 		{
 			return new CASL.OperandElement(prefix+n, CASL.OperandElement.Attribute.address);
 		}
 	}
-
+	
 	public static class Temporally
 	{
 		private static int n=-1;
 		private static String prefix="@V";
+		
 		public static CASL.OperandElement getNew()
 		{
 			++n;
 			return new CASL.OperandElement(prefix+n, CASL.OperandElement.Attribute.register);
 		}
+		
 		public static CASL.OperandElement getLatest()
 		{
 			return new CASL.OperandElement(prefix+n, CASL.OperandElement.Attribute.register);
 		}
 	}
-
+	
 	private CASL casl=new CASL();
 	private ArrayList<CASL> caslList=new ArrayList<>();
 	private ASTSymbolTable table;
 	private boolean doOptimize=true;
-
+	
 	public ArrayList<CASL> getCaslList()
 	{
 		return caslList;
 	}
-
+	
 	public String getLibraries()
 	{
-		return Arrays.stream(CASL.Library.values())
-				.filter(CASL.Library::isInUse)
-				.map(CASL.Library::get)
-				.reduce("", (joined, s)->joined+"\n\n"+s);
+		return Arrays.stream(CASL.Library.values()).filter(CASL.Library::isInUse).map(CASL.Library::get).reduce("", (joined, s)->joined+"\n\n"+s);
 	}
-
+	
 	public void run(final ASTProgram program, final ASTSymbolTable table)
 	{
 		try
@@ -70,7 +70,7 @@ public class AST2CASL implements ASTVisitor
 			System.out.print(e);
 		}
 	}
-
+	
 	public void visit(ASTAssignmentStatement n) throws ASTException
 	{
 		// if A[i]=V (A[i] is local variable correspond to global variable)
@@ -88,11 +88,11 @@ public class AST2CASL implements ASTVisitor
 				return;
 			}
 		}
-
+		
 		// if A=V
 		n.getVariable().accept(this);
 		n.getExpression().accept(this);
-
+		
 		if(n.getVariable() instanceof ASTIndexedVariable)
 		{
 			casl.addCode(CASL.Inst.LD, Temporally.getNew(), n.getExpression().getResultSymbol());
@@ -107,34 +107,34 @@ public class AST2CASL implements ASTVisitor
 			casl.addCode(CASL.Inst.LD, n.getVariable().getResultSymbol(), n.getExpression().getResultSymbol());
 		}
 	}
-
+	
 	public void visit(ASTBlock n) throws ASTException
 	{
 		if(n.getVariableDeclarations()!=null)
 		{
-			for(ASTVariableDeclaration v:n.getVariableDeclarations())
+			for(ASTVariableDeclaration v : n.getVariableDeclarations())
 			{
 				v.accept(this);
 			}
 		}
-
+		
 		if(casl.requiresLibraryBuffer())
 		{
 			casl.addStorage(new CASL.OperandElement("LIBBUF", CASL.OperandElement.Attribute.address), 256);
 			casl.addStorage(new CASL.OperandElement("LIBLEN", CASL.OperandElement.Attribute.address), 1);
 		}
-
+		
 		if(CASL.Library.useRETV())
 		{
 			casl.addStorage(new CASL.OperandElement("RETV", CASL.OperandElement.Attribute.address), 1);
 		}
-
+		
 		caslList.add(casl);
 		casl=new CASL();
-
+		
 		if(n.getSubprogramDeclarations()!=null)
 		{
-			for(ASTSubprogramDeclaration s:n.getSubprogramDeclarations())
+			for(ASTSubprogramDeclaration s : n.getSubprogramDeclarations())
 			{
 				s.accept(this);
 				if(casl.requiresLibraryBuffer())
@@ -142,7 +142,7 @@ public class AST2CASL implements ASTVisitor
 					casl.addStorage(new CASL.OperandElement("LIBBUF", CASL.OperandElement.Attribute.address), 256);
 					casl.addStorage(new CASL.OperandElement("LIBLEN", CASL.OperandElement.Attribute.address), 1);
 				}
-
+				
 				if(CASL.Library.useRETV())
 				{
 					casl.addStorage(new CASL.OperandElement("RETV", CASL.OperandElement.Attribute.address), 1);
@@ -152,15 +152,15 @@ public class AST2CASL implements ASTVisitor
 			}
 		}
 	}
-
+	
 	public void visit(ASTCompoundStatement n) throws ASTException
 	{
-		for(ASTStatement s:n.getStatements())
+		for(ASTStatement s : n.getStatements())
 		{
 			s.accept(this);
 		}
 	}
-
+	
 	public void visit(ASTExpression n) throws ASTException
 	{
 		n.getLeft().accept(this);
@@ -170,12 +170,26 @@ public class AST2CASL implements ASTVisitor
 		CASL.OperandElement L2=Label.getNew();
 		switch(n.getRecord().getTSToken())
 		{
-			case SEQUAL: casl.addCode(CASL.Inst.JZE, L1); break;
-			case SNOTEQUAL: casl.addCode(CASL.Inst.JNZ, L1); break;
-			case SLESS: casl.addCode(CASL.Inst.JMI, L1); break;
-			case SLESSEQUAL: casl.addCode(CASL.Inst.JMI, L1); casl.addCode(CASL.Inst.JZE, L1); break;
-			case SGREAT: casl.addCode(CASL.Inst.JPL, L1); break;
-			case SGREATEQUAL: casl.addCode(CASL.Inst.JPL, L1); casl.addCode(CASL.Inst.JZE, L1); break;
+			case SEQUAL:
+				casl.addCode(CASL.Inst.JZE, L1);
+				break;
+			case SNOTEQUAL:
+				casl.addCode(CASL.Inst.JNZ, L1);
+				break;
+			case SLESS:
+				casl.addCode(CASL.Inst.JMI, L1);
+				break;
+			case SLESSEQUAL:
+				casl.addCode(CASL.Inst.JMI, L1);
+				casl.addCode(CASL.Inst.JZE, L1);
+				break;
+			case SGREAT:
+				casl.addCode(CASL.Inst.JPL, L1);
+				break;
+			case SGREATEQUAL:
+				casl.addCode(CASL.Inst.JPL, L1);
+				casl.addCode(CASL.Inst.JZE, L1);
+				break;
 		}
 		casl.addCode(CASL.Inst.LAD, Temporally.getNew(), new CASL.OperandElement(CASL.FalseString, CASL.OperandElement.Attribute.integer));
 		casl.addCode(CASL.Inst.JUMP, L2);
@@ -184,13 +198,13 @@ public class AST2CASL implements ASTVisitor
 		casl.addCode(L2);
 		n.setResultSymbol(new CASL.Operand(Temporally.getLatest()));
 	}
-
+	
 	public void visit(ASTSimpleExpression n) throws ASTException
 	{
 		n.getLeft().accept(this);
 		CASL.OperandElement left=Temporally.getNew();
 		casl.addCode(CASL.Inst.LD, left, n.getLeft().getResultSymbol());
-
+		
 		if(n.getSign()==ASTSimpleExpression.NEGATIVE)
 		{
 			casl.addCode(CASL.Inst.XOR, left, new CASL.OperandElement("#FFFF", CASL.OperandElement.Attribute.literal));
@@ -203,7 +217,7 @@ public class AST2CASL implements ASTVisitor
 		}
 		n.setResultSymbol(new CASL.Operand(left));
 	}
-
+	
 	public void visit(ASTTerm n) throws ASTException
 	{
 		n.getLeft().accept(this);
@@ -233,10 +247,10 @@ public class AST2CASL implements ASTVisitor
 		{
 			CASL.Library.use(CASL.Library.MOD);
 		}
-
+		
 		n.setResultSymbol(new CASL.Operand(new CASL.OperandElement("RETV", CASL.OperandElement.Attribute.address)));
 	}
-
+	
 	public void visit(ASTFactor n) throws ASTException
 	{
 		if(n.getVariable()!=null)
@@ -264,15 +278,17 @@ public class AST2CASL implements ASTVisitor
 		else if(n.getEvalType()==ASTEvalType.tBoolean)
 		{
 			n.setResultSymbol(new CASL.Operand(new CASL.OperandElement(n.getRecord().getText().equals("true") ? CASL.TrueString : CASL.FalseString, CASL.OperandElement.Attribute.integer)));
-		}else if(n.getEvalType()==ASTEvalType.tInteger)
+		}
+		else if(n.getEvalType()==ASTEvalType.tInteger)
 		{
 			n.setResultSymbol((new CASL.Operand(new CASL.OperandElement(n.getRecord().getText(), CASL.OperandElement.Attribute.integer))));
-		}else
+		}
+		else
 		{
 			n.setResultSymbol(new CASL.Operand(new CASL.OperandElement(n.getRecord().getText(), CASL.OperandElement.Attribute.literal)));
 		}
 	}
-
+	
 	public void visit(ASTIfThenElseStatement n) throws ASTException
 	{
 		CASL.OperandElement L1=Label.getNew();
@@ -286,7 +302,7 @@ public class AST2CASL implements ASTVisitor
 		n.getElseStatement().accept(this);
 		casl.addCode(L2);
 	}
-
+	
 	public void visit(ASTIfThenStatement n) throws ASTException
 	{
 		CASL.OperandElement L=Label.getNew();
@@ -296,7 +312,7 @@ public class AST2CASL implements ASTVisitor
 		n.getThenStatement().accept(this);
 		casl.addCode(L);
 	}
-
+	
 	public void visit(ASTIndexedVariable n) throws ASTException
 	{
 		n.getIndex().accept(this);
@@ -311,16 +327,16 @@ public class AST2CASL implements ASTVisitor
 		}
 		n.setResultSymbol(new CASL.Operand(new CASL.OperandElement(table.getLabelAlias(n.getName()), CASL.OperandElement.Attribute.address)).join(n.getIndex().getResultSymbol()));
 	}
-
+	
 	public void visit(ASTInputStatement n) throws ASTException
 	{
 		if(n.getVariables()!=null)
 		{
-			for(ASTVariable v:n.getVariables())
+			for(ASTVariable v : n.getVariables())
 			{
 				v.accept(this);
 			}
-			for(ASTVariable v:n.getVariables())
+			for(ASTVariable v : n.getVariables())
 			{
 				casl.addCode(CASL.Inst.RPUSH);
 				switch(v.getEvalType())
@@ -361,17 +377,17 @@ public class AST2CASL implements ASTVisitor
 		casl.addCode(CASL.Inst.CALL, new CASL.OperandElement("RDLN", CASL.OperandElement.Attribute.address));
 		CASL.Library.use(CASL.Library.RDLN);
 	}
-
+	
 	public void visit(ASTOutputStatement n) throws ASTException
 	{
 		if(n.getExpressions()!=null)
 		{
-			for(ASTExpressionNode e:n.getExpressions())
+			for(ASTExpressionNode e : n.getExpressions())
 			{
 				e.accept(this);
 			}
-
-			for(ASTExpressionNode e:n.getExpressions())
+			
+			for(ASTExpressionNode e : n.getExpressions())
 			{
 				casl.addCode(CASL.Inst.RPUSH);
 				casl.addCode(CASL.Inst.PUSH, new CASL.OperandElement("LIBBUF", CASL.OperandElement.Attribute.address));
@@ -412,7 +428,7 @@ public class AST2CASL implements ASTVisitor
 				casl.addCode(CASL.Inst.RPOP);
 			}
 		}
-
+		
 		casl.addCode(CASL.Inst.RPUSH);
 		casl.addCode(CASL.Inst.PUSH, new CASL.OperandElement("LIBBUF", CASL.OperandElement.Attribute.address));
 		casl.addCode(CASL.Inst.PUSH, new CASL.OperandElement("LIBLEN", CASL.OperandElement.Attribute.address));
@@ -421,12 +437,12 @@ public class AST2CASL implements ASTVisitor
 		CASL.Library.use(CASL.Library.WRTLN);
 		casl.addCode(CASL.Inst.RPOP);
 	}
-
+	
 	public void visit(ASTParameter n) throws ASTException
 	{
 		n.getNames().forEach(s->casl.addCode(CASL.Inst.POP, new CASL.OperandElement(s, CASL.OperandElement.Attribute.register)));
 	}
-
+	
 	public void visit(ASTProcedureCallStatement n) throws ASTException
 	{
 		casl.addCode(CASL.Inst.RPUSH);
@@ -436,32 +452,37 @@ public class AST2CASL implements ASTVisitor
 			{
 				e.accept(this);
 			}
-
-			for(ASTExpressionNode e:n.getExpressions())
+			
+			for(ASTExpressionNode e : n.getExpressions())
 			{
 				casl.addCode(CASL.Inst.PUSH, e.getResultSymbol());
 			}
 		}
-
+		
 		// push global variables (only standard type)
-		for(ASTVariableTable.ASTVariableRecord r:table.getGlobalVariableUsedIn(n.getName()).getRecords())
+		ArrayList<ASTVariableTable.ASTVariableRecord> globalVariables=table.getGlobalVariableUsedIn(n.getName()).getRecords();
+		for(ASTVariableTable.ASTVariableRecord r : globalVariables)
 		{
 			casl.addCode(CASL.Inst.PUSH, r.getEvalType().isArrayType() ? new CASL.OperandElement(table.getLabelAlias(r.getName()), CASL.OperandElement.Attribute.address) : new CASL.OperandElement("@"+r.getName(), CASL.OperandElement.Attribute.register));
 		}
-
+		
 		casl.addCode(CASL.Inst.CALL, new CASL.OperandElement(table.getLabelAlias(n.getName()), CASL.OperandElement.Attribute.address));
-
-		// pop global variables (only standard type)
-		for(ASTVariableTable.ASTVariableRecord r:table.getGlobalVariableUsedIn(n.getName()).getRecords())
+		
+		// pop the address of global variable buffer in the called function
+		casl.addCode(CASL.Inst.POP, Temporally.getNew());
+		int ld=0;
+		for(int i=0; i<globalVariables.size(); i++)
 		{
-			if(r.getEvalType().isStandardType())
+			if(globalVariables.get(i).getEvalType().isStandardType())
 			{
-				casl.addCode(CASL.Inst.POP, new CASL.OperandElement(r.getName(), CASL.OperandElement.Attribute.register));
+				casl.addCode(CASL.Inst.LD, new CASL.OperandElement("@"+globalVariables.get(i).getName(), CASL.OperandElement.Attribute.register), new CASL.OperandElement(String.valueOf(ld), CASL.OperandElement.Attribute.address), Temporally.getLatest());
+				++ld;
 			}
 		}
+		
 		casl.addCode(CASL.Inst.RPOP);
 	}
-
+	
 	public void visit(ASTProgram n) throws ASTException
 	{
 		casl.addCode(new CASL.OperandElement(table.getLabelAlias(n.getName()), CASL.OperandElement.Attribute.address), CASL.Inst.START);
@@ -469,7 +490,7 @@ public class AST2CASL implements ASTVisitor
 		casl.addCode(CASL.Inst.RET);
 		n.getBlock().accept(this);
 	}
-
+	
 	public void visit(ASTPureVariable n) throws ASTException
 	{
 		if(n.getEvalType().isArrayType())
@@ -479,40 +500,68 @@ public class AST2CASL implements ASTVisitor
 		}
 		n.setResultSymbol(new CASL.Operand(new CASL.OperandElement("@"+n.getName(), CASL.OperandElement.Attribute.register)));
 	}
-
+	
 	public void visit(ASTSubprogramDeclaration n) throws ASTException
 	{
 		casl.addCode(new CASL.OperandElement(table.getLabelAlias(n.getName()), CASL.OperandElement.Attribute.address), CASL.Inst.START);
-
+		
 		CASL.OperandElement ret=Temporally.getNew();
 		casl.addCode(CASL.Inst.POP, ret);
-
+		
 		ArrayList<ASTVariableTable.ASTVariableRecord> r=table.getGlobalVariableUsedIn(n.getName()).getRecords();
 		Collections.reverse(r);
-
+		
 		// get local variables correspond to global variables
-		ArrayList<String> local=(ArrayList<String>)r.stream().map(g->table.getLocalVariableOfGlobalVariableIn(n.getName(), g.getName())).collect(Collectors.toList());
-
-		local.forEach(s->casl.addCode(CASL.Inst.POP, new CASL.OperandElement("@"+s, CASL.OperandElement.Attribute.register)));
+		boolean setGLBUF=false;
+		//ArrayList<String> local=(ArrayList<String>)r.stream().map(g->table.getLocalVariableOfGlobalVariableIn(n.getName(), g.getName())).collect(Collectors.toList());
+		//local.forEach(s->casl.addCode(CASL.Inst.POP, new CASL.OperandElement("@"+s, CASL.OperandElement.Attribute.register)));
+		
+		for(ASTVariableTable.ASTVariableRecord record : r)
+		{
+			casl.addCode(CASL.Inst.POP, new CASL.OperandElement("@"+table.getLocalVariableOfGlobalVariableIn(n.getName(), record.getName()), CASL.OperandElement.Attribute.register));
+			setGLBUF=true;
+		}
+		
+		// pop parameters
 		if(n.getParameters()!=null)
 		{
 			ArrayList<ASTParameter> p=n.getParameters();
 			Collections.reverse(p);
 			p.forEach(s->s.getNames().forEach(t->casl.addCode(CASL.Inst.POP, new CASL.OperandElement(t, CASL.OperandElement.Attribute.register))));
 		}
-		casl.addCode(CASL.Inst.PUSH, ret);
+		
 		n.getCompoundStatement().accept(this);
+		
+		// push localized of global variables
+		if(setGLBUF)
+		{
+			final String glbuf="GLBUF";
+			int glbufSize=0;
+			casl.addCode(CASL.Inst.LAD, Temporally.getNew(), new CASL.OperandElement(glbuf, CASL.OperandElement.Attribute.address));
+			Collections.reverse(r);
+			for(int i=0; i<r.size(); ++i)
+			{
+				if(r.get(i).getEvalType().isStandardType())
+				{
+					casl.addCode(CASL.Inst.ST, new CASL.OperandElement("@"+table.getLocalVariableOfGlobalVariableIn(n.getName(), r.get(i).getName()), CASL.OperandElement.Attribute.register), new CASL.OperandElement(String.valueOf(glbufSize), CASL.OperandElement.Attribute.address), Temporally.getLatest());
+					++glbufSize;
+				}
+			}
+			casl.addCode(CASL.Inst.PUSH, new CASL.OperandElement("0", CASL.OperandElement.Attribute.address), Temporally.getLatest());
+			casl.addStorage(new CASL.OperandElement(glbuf, CASL.OperandElement.Attribute.address), glbufSize+1);
+		}
+		casl.addCode(CASL.Inst.PUSH, ret);
 		casl.addCode(CASL.Inst.RET);
-
+		
 		if(n.getVariableDeclaration()!=null)
 		{
-			for(ASTVariableDeclaration v:n.getVariableDeclaration())
+			for(ASTVariableDeclaration v : n.getVariableDeclaration())
 			{
 				v.accept(this);
 			}
 		}
 	}
-
+	
 	public void visit(ASTVariableDeclaration n) throws ASTException
 	{
 		if(n.getType().getEvalType().isArrayType())
@@ -520,11 +569,11 @@ public class AST2CASL implements ASTVisitor
 			n.getNames().forEach(s->casl.addStorage(new CASL.OperandElement(table.getLabelAlias(s), CASL.OperandElement.Attribute.address), n.getType().getLength()));
 		}
 	}
-
+	
 	public void visit(ASTVariableType n) throws ASTException
 	{
 	}
-
+	
 	public void visit(ASTWhileDoStatement n) throws ASTException
 	{
 		CASL.OperandElement L1=Label.getNew();

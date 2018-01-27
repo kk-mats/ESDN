@@ -90,7 +90,12 @@ public class ASTFunctionRecord
 	{
 		return globalAndLocalVariableCorrespondence.stream().anyMatch(p->p.getValue().equals(local));
 	}
-
+	
+	public boolean hasLocalVariableCorrespondenceOf(final String global)
+	{
+		return globalAndLocalVariableCorrespondence.stream().anyMatch(p->p.getKey().equals(global));
+	}
+	
 	public String getName()
 	{
 		return name;

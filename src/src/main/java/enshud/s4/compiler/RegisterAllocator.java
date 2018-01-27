@@ -1,15 +1,48 @@
 package enshud.s4.compiler;
 
+import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class RegisterAllocator
 {
+	private static class Register
+	{
+		private static int priorityCounter=0;
+		private String variable="";
+		private int priority=0;
+		private boolean valueHasChanged=false;
+		
+		public Register(){}
+		
+		public Register(final String variable)
+		{
+			this.variable=variable;
+			++priorityCounter;
+			this.priority=priorityCounter;
+		}
+		
+		public boolean isEmpty()
+		{
+			return !variable.isEmpty();
+		}
+		
+		public String toString()
+		{
+			return variable+":"+priority;
+		}
+	}
+	
 	private ArrayList<CASL.Code> newMain=new ArrayList<>();
 	//private int cur=0;
 	private ArrayDeque<Register[]> registersStack=new ArrayDeque<>();
+	private ControlFlowGraph controlFlowGraph;
+	private ArrayList<AbstractMap.SimpleEntry<String, Boolean>> memory=new ArrayList<>();
+	private Register[] registers=new Register[7];
+	private CASL casl;
 	
 	public RegisterAllocator(final CASL casl)
 	{
@@ -23,12 +56,25 @@ public class RegisterAllocator
 	{
 		int lowestIndex=0;
 		int priorityLowest=Integer.MAX_VALUE;
-
+		
 		for(int i=0; i<registers.length; i++)
 		{
 			// variable has been allocated to registers[i]
 			if(registers[i].variable.equals(variable))
 			{
+				// reload register value when variable has changed by a function
+				for(int j=0; j<memory.size(); ++j)
+				{
+					if(memory.get(j).getKey().equals(variable))
+					{
+						// variable has changed
+						if(memory.get(j).getValue())
+						{
+							newMain.add(new CASL.Code(CASL.Inst.LD, new CASL.OperandElement("GR"+(i+1), CASL.OperandElement.Attribute.register), new CASL.OperandElement("MEM"+j, CASL.OperandElement.Attribute.address)));
+						}
+						break;
+					}
+				}
 				registers[i]=new Register(variable);
 				return new CASL.OperandElement("GR"+(i+1), CASL.OperandElement.Attribute.register);
 			}
@@ -39,58 +85,34 @@ public class RegisterAllocator
 				priorityLowest=registers[i].priority;
 			}
 		}
-
+		
 		CASL.OperandElement retReg=new CASL.OperandElement("GR"+(lowestIndex+1), CASL.OperandElement.Attribute.register);
-
-		int lowestMemoryIndex=-1;
+		
+		// memory index where variable is stored
 		int variableMemoryIndex=-1;
-
 		for(int i=0; i<memory.size(); ++i)
 		{
-			if(memory.get(i).equals(variable))
+			if(memory.get(i).getKey().equals(variable))
 			{
 				variableMemoryIndex=i;
-			}
-
-			if(memory.get(i).equals(registers[lowestIndex].variable))
-			{
-				lowestMemoryIndex=i;
-			}
-
-			if(lowestMemoryIndex!=-1 && variableMemoryIndex!=-1)
-			{
 				break;
 			}
 		}
-
+		
 		if(priorityLowest!=0)
 		{
-			if(lowestMemoryIndex==-1)
-			{
-				lowestMemoryIndex=memory.size();
-				memory.add(registers[lowestIndex].variable);
-			}
-			
-			newMain.add(new CASL.Code(CASL.Inst.ST, retReg, new CASL.OperandElement("MEM"+lowestMemoryIndex, CASL.OperandElement.Attribute.address)));
-			//casl.insertCode(cur, new CASL.Code(CASL.Inst.ST, retReg, new CASL.OperandElement("MEM"+lowestMemoryIndex, CASL.OperandElement.Attribute.address)));
-			//++cur;
+			save(lowestIndex);
 		}
-
+		
 		if(variableMemoryIndex!=-1)
 		{
 			newMain.add(new CASL.Code(CASL.Inst.LD, retReg, new CASL.OperandElement("MEM"+variableMemoryIndex, CASL.OperandElement.Attribute.address)));
-			//casl.insertCode(cur, new CASL.Code(CASL.Inst.LD, retReg, new CASL.OperandElement("MEM"+variableMemoryIndex, CASL.OperandElement.Attribute.address)));
-			//++cur;
+			memory.get(variableMemoryIndex).setValue(false);
 		}
-
+		
 		registers[lowestIndex]=new Register(variable);
 		return retReg;
 	}
-
-	private ControlFlowGraph controlFlowGraph;
-	private ArrayList<String> memory=new ArrayList<>();
-	private Register[] registers=new Register[7];
-	private CASL casl;
 	
 	private void clearAll()
 	{
@@ -110,14 +132,15 @@ public class RegisterAllocator
 		}
 		for(int j=0; j<memory.size(); ++j)
 		{
-			if(memory.get(j).equals(registers[i].variable))
+			if(memory.get(j).getKey().equals(registers[i].variable))
 			{
 				newMain.add(new CASL.Code(CASL.Inst.ST, new CASL.OperandElement("GR"+(i+1), CASL.OperandElement.Attribute.register), new CASL.OperandElement("MEM"+j, CASL.OperandElement.Attribute.address)));
+				memory.get(j).setValue(true);
 				return;
 			}
 		}
 		newMain.add(new CASL.Code(CASL.Inst.ST, new CASL.OperandElement("GR"+(i+1), CASL.OperandElement.Attribute.register), new CASL.OperandElement("MEM"+memory.size(), CASL.OperandElement.Attribute.address)));
-		memory.add(registers[i].variable);
+		memory.add(new AbstractMap.SimpleEntry<>(registers[i].variable, false));
 	}
 	
 	public void run()
@@ -126,12 +149,12 @@ public class RegisterAllocator
 		basicBlockStack.push(controlFlowGraph.getRoot());
 		CASL.Operand operand;
 		ControlFlowGraph.BasicBlock current;
+		Register[] regtmp;
 		
 		while(!basicBlockStack.isEmpty())
 		{
 			clearAll();
 			current=basicBlockStack.pop();
-			System.out.print("--------------------------------\n");
 			if(current.isVisited())
 			{
 				continue;
@@ -141,16 +164,24 @@ public class RegisterAllocator
 				c.setComment(c.toString());
 				if(c.getInst()==CASL.Inst.RPUSH)
 				{
-					Register[] tmp=Arrays.copyOf(registers, registers.length);
-					registersStack.push(tmp);
+					regtmp=Arrays.copyOf(registers, registers.length);
+					registersStack.push(regtmp);
+					newMain.add(c);
+					continue;
+				}
+				
+				if(c.getInst()==CASL.Inst.CALL)
+				{
+					clearAll();
 					newMain.add(c);
 					continue;
 				}
 				
 				if(c.getInst()==CASL.Inst.RPOP)
 				{
-					Register[] tmp=registersStack.pop();
-					registers=Arrays.copyOf(tmp, tmp.length);
+					saveAll();
+					regtmp=registersStack.pop();
+					registers=Arrays.copyOf(regtmp, regtmp.length);
 					newMain.add(c);
 					continue;
 				}
@@ -161,8 +192,7 @@ public class RegisterAllocator
 				{
 					if(operand.get(i).getAttribute()==CASL.OperandElement.Attribute.register && operand.get(i).getELementName().startsWith("@"))
 					{
-						reg=allocate(operand.get(i).getELementName());
-						operand.setElement(i, reg);
+						operand.setElement(i, allocate(operand.get(i).getELementName()));
 					}
 				}
 				
@@ -182,7 +212,7 @@ public class RegisterAllocator
 				saveAll();
 				newMain.add(tmp);
 			}
-			else
+			else if(newMain.get(newMain.size()-1).getInst()!=CASL.Inst.RET)
 			{
 				saveAll();
 			}
@@ -194,80 +224,15 @@ public class RegisterAllocator
 		}
 		
 		IntStream.range(0, memory.size()).forEach(i->casl.addStorage(new CASL.OperandElement("MEM"+i, CASL.OperandElement.Attribute.address), 1));
+		
+		System.out.print(String.join("\n", memory.stream().map(AbstractMap.SimpleEntry::getKey).collect(Collectors.toList())));
+		System.out.print("------------------------------------------");
 		return;
 	}
-/*
-	public void _run()
-	{
-		CASL.Operand operand;
-
-		for(cur=0; cur<casl.getMain().size(); ++cur)
-		{
-			casl.getMain().get(cur).setComment(casl.getMain().get(cur).toString());
-			if(casl.getMain().get(cur).getInst()==CASL.Inst.RPUSH)
-			{
-				Register[] tmp=Arrays.copyOf(registers, registers.length);
-				registersStack.push(tmp);
-				
-				continue;
-			}
-			
-			if(casl.getMain().get(cur).getInst()==CASL.Inst.RPOP)
-			{
-				Register[] tmp=registersStack.pop();
-				registers=Arrays.copyOf(tmp, tmp.length);
-				continue;
-			}
-			operand=casl.getMain().get(cur).getOperand();
-
-			for(int i=0; i<operand.length(); ++i)
-			{
-				if(operand.get(i).getAttribute()==CASL.OperandElement.Attribute.register && operand.get(i).getELementName().startsWith("@"))
-				{
-					casl.getMain().get(cur).getOperand().setElement(i, allocate(operand.get(i).getELementName()));
-				}
-			}
-
-			if(operand.length()==3 && operand.get(0).getAttribute()==CASL.OperandElement.Attribute.register)
-			{
-
-			}
-		}
-
-		IntStream.range(0, memory.size()).forEach(i->casl.addStorage(new CASL.OperandElement("MEM"+i, CASL.OperandElement.Attribute.address), 1));
-		return;
-	}*/
-
+	
 	public CASL getCasl()
 	{
 		casl.setMain(newMain);
 		return casl;
-	}
-	
-	private static class Register
-	{
-		private static int priorityCounter=0;
-		private String variable="";
-		private int priority=0;
-		private boolean valueHasChanged=false;
-
-		public Register(){}
-
-		public Register(final String variable)
-		{
-			this.variable=variable;
-			++priorityCounter;
-			this.priority=priorityCounter;
-		}
-		
-		public boolean isEmpty()
-		{
-			return !variable.isEmpty();
-		}
-		
-		public String toString()
-		{
-			return variable+":"+priority;
-		}
 	}
 }

@@ -115,6 +115,11 @@ public class ASTSymbolTable
 		return table.stream().map(f->f.hasGlobalVariableCorrespondenceOf(local)).reduce(false, (before, b)->Boolean.logicalOr(before, b));
 	}
 	
+	public boolean hasLocalVariableCorrespondenceOf(final String global)
+	{
+		return table.stream().map(f->f.hasLocalVariableCorrespondenceOf(global)).reduce(false, (before, b)->Boolean.logicalOr(before, b));
+	}
+	
 	public ASTVariableTable getFunctionParameter(final String name)
 	{
 		Optional<ASTFunctionRecord> r=table.stream().filter(s->s.getName().equals(name)).findAny();
