@@ -44,8 +44,12 @@ public class ASTCompiler
 						if(!Compiler.debug)
 						{
 							registerAllocator.run();
+							fw.write(registerAllocator.getCasl().toString());
 						}
-						fw.write(casl.toString());
+						else
+						{
+							fw.write(casl.toString());
+						}
 						fw.write("\n");
 					}
 					fw.write(translator.getLibraries());

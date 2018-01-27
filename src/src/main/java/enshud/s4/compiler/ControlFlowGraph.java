@@ -6,37 +6,6 @@ import java.util.stream.Collectors;
 
 public class ControlFlowGraph
 {
-	public class BasicBlock
-	{
-		private String name="";
-		private ArrayList<CASL.Code> code;
-		private ArrayList<BasicBlock> next=new ArrayList<>();
-
-		public BasicBlock(String name, ArrayList<CASL.Code> code)
-		{
-			this.name=name;
-			this.code=code;
-		}
-
-		public String toString()
-		{
-			String s=name+"\n{\n";
-			s+=code.stream().map(CASL.Code::toString).reduce("", (joined, t)->joined+t+"\n");
-			s+="}->["+String.join(", ", next.stream().map(b->b.name).collect(Collectors.toList()))+"]\n";
-			return s;
-		}
-	}
-
-	private ArrayList<BasicBlock> graph;
-	private int cur=0;
-	private ArrayList<AbstractMap.SimpleEntry<String, String>> edge=new ArrayList<>();
-
-	public ControlFlowGraph(final CASL casl)
-	{
-		graph=split(casl);
-		connectNodes();
-	}
-
 	private ArrayList<BasicBlock> split(final CASL casl)
 	{
 		ArrayList<BasicBlock> basicBlockList=new ArrayList<>();
@@ -49,6 +18,12 @@ public class ControlFlowGraph
 			name=casl.getMain().get(cur).getLabel().isEmpty() ? String.valueOf(nblock) : casl.getMain().get(cur).getLabel();
 			for(; cur<casl.getMain().size()-1; ++cur)
 			{
+				if(!casl.getMain().get(cur+1).getLabel().isEmpty())
+				{
+					edge.add(new AbstractMap.SimpleEntry<>(name, casl.getMain().get(cur+1).getLabel()));
+					break;
+				}
+				
 				if(casl.getMain().get(cur).getInst().isJump()/* || casl.getMain().get(cur).getInst()==CASL.Inst.CALL*/)
 				{
 					edge.add(new AbstractMap.SimpleEntry<>(name, casl.getMain().get(cur).getOperand().get(0).getELementName()));
@@ -59,11 +34,6 @@ public class ControlFlowGraph
 					break;
 				}
 
-				if(!casl.getMain().get(cur+1).getLabel().isEmpty())
-				{
-					edge.add(new AbstractMap.SimpleEntry<>(name, casl.getMain().get(cur+1).getLabel()));
-					break;
-				}
 				code.add(casl.getMain().get(cur+1));
 			}
 			basicBlockList.add(new BasicBlock(name, code));
@@ -72,6 +42,21 @@ public class ControlFlowGraph
 			++nblock;
 		}
 		return basicBlockList;
+	}
+	
+	private ArrayList<BasicBlock> graph;
+	private int cur=0;
+	private ArrayList<AbstractMap.SimpleEntry<String, String>> edge=new ArrayList<>();
+	
+	public ControlFlowGraph(final CASL casl)
+	{
+		graph=split(casl);
+		connectNodes();
+	}
+	
+	public BasicBlock getRoot()
+	{
+		return graph.get(0);
 	}
 
 	private void connectNodes()
@@ -101,6 +86,57 @@ public class ControlFlowGraph
 			}
 			from=null;
 			next=null;
+		}
+	}
+	
+	public ArrayList<CASL.Code> getCode()
+	{
+		ArrayList<CASL.Code> code=new ArrayList<>();
+		for(BasicBlock block : graph)
+		{
+			if(block.isVisited())
+			{
+				code.addAll(block.getCode());
+			}
+		}
+		return code;
+	}
+	
+	public class BasicBlock
+	{
+		private String name="";
+		private ArrayList<CASL.Code> code;
+		private ArrayList<BasicBlock> next=new ArrayList<>();
+		private boolean visited=false;
+		
+		public BasicBlock(String name, ArrayList<CASL.Code> code)
+		{
+			this.name=name;
+			this.code=code;
+		}
+		
+		public String toString()
+		{
+			String s=name+"\n{\n";
+			s+=code.stream().map(CASL.Code::toString).reduce("", (joined, t)->joined+t+"\n");
+			s+="}->["+String.join(", ", next.stream().map(b->b.name).collect(Collectors.toList()))+"]\n";
+			return s;
+		}
+		
+		public boolean isVisited()
+		{
+			return visited;
+		}
+		
+		public ArrayList<CASL.Code> getCode()
+		{
+			visited=true;
+			return code;
+		}
+		
+		public ArrayList<BasicBlock> getNext()
+		{
+			return next;
 		}
 	}
 
