@@ -1,5 +1,6 @@
 package enshud.s4.compiler;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -76,6 +77,7 @@ public class RegisterAllocator
 	private Register[] registers=new Register[7];
 	private CASL casl;
 	private int cur=0;
+	private ArrayDeque<Register[]> registersStack=new ArrayDeque<>();
 
 
 	public RegisterAllocator(final CASL casl)
@@ -83,7 +85,7 @@ public class RegisterAllocator
 		Arrays.fill(registers, new Register());
 		this.casl=casl;
 		controlFlowGraph=new ControlFlowGraph(casl);
-		System.out.print(controlFlowGraph.toString());
+		//System.out.print(controlFlowGraph.toString());
 	}
 
 	public void run()
@@ -92,6 +94,17 @@ public class RegisterAllocator
 
 		for(cur=0; cur<casl.getMain().size(); ++cur)
 		{
+			if(casl.getMain().get(cur).getInst()==CASL.Inst.RPUSH)
+			{
+				registersStack.addLast(registers);
+				continue;
+			}
+			
+			if(casl.getMain().get(cur).getInst()==CASL.Inst.RPOP)
+			{
+				registers=registersStack.getLast();
+				continue;
+			}
 			operand=casl.getMain().get(cur).getOperand();
 
 			for(int i=0; i<operand.length(); ++i)
@@ -116,8 +129,8 @@ public class RegisterAllocator
 	{
 		return casl;
 	}
-
-	public static class Register
+	
+	private static class Register
 	{
 		private static int priorityCounter=0;
 		private String variable="";
