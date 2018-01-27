@@ -273,6 +273,11 @@ public class CASL
 	{
 		return main;
 	}
+	
+	public void setMain(final ArrayList<Code> main)
+	{
+		this.main=main;
+	}
 
 	public enum Library
 	{
@@ -408,6 +413,7 @@ public class CASL
 		private String label="";
 		private Inst inst;
 		private Operand operand;
+		private String comment="";
 
 		public Code(final Inst inst)
 		{
@@ -445,7 +451,17 @@ public class CASL
 			String s=label;
 			s=s+(s.length()<4 ? "\t\t" : "\t");
 			s+=inst.name()+(inst.name().length()<4 ? "\t\t" : "\t");
-			return s+operand.toString();
+			s+=operand.toString();
+			if(!comment.isEmpty())
+			{
+				
+				for(int i=s.length(); i<=36; i+=4)
+				{
+					s+="\t";
+				}
+				s+=";"+comment;
+			}
+			return s;
 		}
 
 		public String getLabel()
@@ -466,6 +482,11 @@ public class CASL
 		public void setLabel(final String label)
 		{
 			this.label=label;
+		}
+		
+		public void setComment(final String comment)
+		{
+			this.comment=comment;
 		}
 	}
 
