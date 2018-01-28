@@ -26,7 +26,7 @@ public class Compiler {
 	public static void main(final String[] args)
 	{
 		// Compilerを実行してcasを生成する
-		new Compiler().run("data/ts/normal10.ts", "tmp/out1.cas");
+		new Compiler().run("data/ts/normal07.ts", "tmp/out1.cas");
 		//new enshud.s1.lexer.Lexer().run("mytest.pas", "mytest.ts");
 		//new Compiler().run("mytest.ts", "tmp/out.cas");
 

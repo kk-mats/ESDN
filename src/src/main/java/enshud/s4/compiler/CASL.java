@@ -439,8 +439,9 @@ public class CASL
 				}
 				else if(operand.get(1).getAttribute()==OperandElement.Attribute.register && operand.get(2).getAttribute()==OperandElement.Attribute.register)
 				{
-					// if [CPA|CPL adr,reg,reg]->[CPA|CPL reg,adr,reg]
-					newOperand=new Operand(operand.elements[2], operand.elements[0], operand.elements[1]);
+					// if [CPA|CPL adr,reg,reg]->[LD @,adr,reg], [CPA|CPL @,reg]
+					main.add(new Code(Inst.LD, AST2CASL.Temporally.getNew(), operand.elements[0], operand.elements[1]));
+					newOperand=new Operand(AST2CASL.Temporally.getLatest(), operand.elements[2]);
 				}
 			}
 		}
