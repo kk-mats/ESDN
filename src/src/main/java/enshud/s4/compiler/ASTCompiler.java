@@ -33,9 +33,9 @@ public class ASTCompiler
 
 				try(FileWriter fw=new FileWriter(new File(outputFileName)))
 				{
+					System.out.print(checker.getTable().toString());
 					if(Compiler.debug)
 					{
-						System.out.print(checker.getTable().toString());
 						//fw.write(checker.getTable().toString());
 					}
 					for(CASL casl : translator.getCaslList())

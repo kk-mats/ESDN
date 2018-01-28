@@ -4,7 +4,6 @@ import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class RegisterAllocator
@@ -225,8 +224,8 @@ public class RegisterAllocator
 		
 		IntStream.range(0, memory.size()).forEach(i->casl.addStorage(new CASL.OperandElement("MEM"+i, CASL.OperandElement.Attribute.address), 1));
 		
-		System.out.print(String.join("\n", memory.stream().map(AbstractMap.SimpleEntry::getKey).collect(Collectors.toList())));
-		System.out.print("------------------------------------------");
+		//System.out.print(String.join("\n", memory.stream().map(AbstractMap.SimpleEntry::getKey).collect(Collectors.toList())));
+		//System.out.print("------------------------------------------");
 		return;
 	}
 	
