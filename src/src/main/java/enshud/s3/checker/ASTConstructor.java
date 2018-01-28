@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 
 import enshud.s1.lexer.TSToken;
@@ -36,6 +37,7 @@ public class ASTConstructor
 		throw new Error("expecting "+TSToken.toString()+"; "+lookahead.getTSToken().toString()+" found.");
 		
 	}
+
 	private boolean read()
 	{
 		if(pos<records.size()-1)
@@ -963,15 +965,12 @@ public class ASTConstructor
 					{
 						match(TSToken.SSEMICOLON);
 						ASTBlock block=block();
-						//if(null!=block)
-						//{
-							ASTCompoundStatement compoundStatement=compoundStatement();
-							if(null!=compoundStatement && lookahead.is(TSToken.SDOT))
-							{
-								match(TSToken.SDOT);
-								return new ASTProgram(name, names, block, compoundStatement, r);
-							}
-						//}
+						ASTCompoundStatement compoundStatement=compoundStatement();
+						if(null!=compoundStatement && lookahead.is(TSToken.SDOT))
+						{
+							match(TSToken.SDOT);
+							return new ASTProgram(name, names, block, compoundStatement, r);
+						}
 					}
 				}
 			}

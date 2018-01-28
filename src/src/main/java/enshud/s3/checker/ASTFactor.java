@@ -1,7 +1,5 @@
 package enshud.s3.checker;
 
-import enshud.s1.lexer.TSToken;
-
 public class ASTFactor extends ASTExpressionNode
 {
 	private ASTVariable variable=null;

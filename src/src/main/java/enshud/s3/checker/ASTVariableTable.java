@@ -105,4 +105,14 @@ public class ASTVariableTable
 	{
 		return records;
 	}
+
+	public String toString()
+	{
+		String s="";
+		for(ASTVariableRecord r:records)
+		{
+			s+="\t"+r.getEvalType().toString()+" "+r.getName()+"\n";
+		}
+		return s;
+	}
 }

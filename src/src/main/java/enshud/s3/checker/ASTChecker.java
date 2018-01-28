@@ -1,15 +1,18 @@
 package enshud.s3.checker;
 
+import enshud.s1.lexer.TSToken;
+
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
+
 public class ASTChecker implements ASTVisitor
 {
-	private ASTFunctionTable table;
+	private ASTSymbolTable table=new ASTSymbolTable();
+	private ArrayDeque<String> scope=new ArrayDeque<>();
+	private boolean success=false;
 
-	public ASTChecker()
-	{
-		table=new ASTFunctionTable();
-	}
-
-	public ASTFunctionTable getTable()
+	public ASTSymbolTable getTable()
 	{
 		return table;
 	}
@@ -20,11 +23,22 @@ public class ASTChecker implements ASTVisitor
 		{
 			program.accept(this);
 			System.out.println("OK");
+			success=true;
 		}
 		catch(ASTException e)
 		{
 			System.err.println(e.toString());
 		}
+	}
+
+	public boolean success()
+	{
+		return success;
+	}
+
+	public boolean isValidLabel(final String label)
+	{
+		return Character.isUpperCase(label.charAt(0)) && label.length()<9;
 	}
 
 	@Override
@@ -47,10 +61,11 @@ public class ASTChecker implements ASTVisitor
 			for(ASTVariableDeclaration v:n.getVariableDeclarations())
 			{
 				v.accept(this);
-				if(!table.addGlobalVariable(v))
+				if(!table.addDeclaredVariableOfGlobalFunction(v))
 				{
 					throw new SemErrorException(v);
 				}
+				v.setNames((ArrayList<String>)v.getNames().stream().map(s->table.getScope(scope, s)).collect(Collectors.toList()));
 			}
 		}
 
@@ -219,7 +234,11 @@ public class ASTChecker implements ASTVisitor
 			{
 				throw new SemErrorException(n.getIndex());
 			}
+			table.registerInvalidLabel(table.getScope(scope, n.getName()));
+			n.setIndex(new ASTSimpleExpression(ASTSimpleExpression.POSITIVE, n.getIndex(), new ASTFactor(new Record(TSToken.SCONSTANT, String.valueOf(v.getOffset()), n.getRecord().getLineNumber())), new Record(TSToken.SMINUS, "-", n.getRecord().getLineNumber())));
+			((ASTSimpleExpression)n.getIndex()).getRight().setEvalType(ASTEvalType.tInteger);
 			n.setEvalType(v.getEvalType().toStandardType());
+			n.setName(table.getScope(scope, n.getName()));
 			return;
 		}
 		throw new SemErrorException(n);
@@ -262,7 +281,6 @@ public class ASTChecker implements ASTVisitor
 	@Override
 	public void visit(ASTParameter n) throws ASTException
 	{
-
 	}
 	
 	public void visit(ASTProcedureCallStatement n) throws ASTException
@@ -301,16 +319,22 @@ public class ASTChecker implements ASTVisitor
 	@Override
 	public void visit(ASTProgram n) throws ASTException
 	{
-		table.setGlobalName(n.getName());
+		table.setGlobalFunctionName(n.getName());
+		if(!isValidLabel(n.getName()))
+		{
+			table.registerInvalidLabel(n.getName());
+		}
+		scope.addLast(n.getName());
 		for(String s:n.getNames())
 		{
-			if(!table.addGlobalParameter(s, n.getRecord()))
+			if(!table.addGlobalFunctionParameter(s, n.getRecord()))
 			{
 				throw new SemErrorException(n);
 			}
 		}
 		n.getBlock().accept(this);
 		n.getCompoundStatement().accept(this);
+		scope.removeLast();
 	}
 
 	@Override
@@ -319,7 +343,23 @@ public class ASTChecker implements ASTVisitor
 		ASTVariableType v=table.getVariableType(n.getName());
 		if(v!=null)
 		{
+			if(v.getEvalType().isArrayType())
+			{
+				table.registerInvalidLabel(n.getName());
+			}
 			n.setEvalType(v.getEvalType());
+			n.setName(table.getScope(scope, n.getName()));
+			
+			// If n is a virtual parameter of subprogram for a global variable
+			// call f(p1,..., pn, &g1,..., &gm)
+			// func f(p1,..., pn, *v1,..., &vm)
+			// all v* are a virtual parameter for global variables
+			if(table.hasGlobalVariableCorrespondenceOf(n.getName()))
+			{
+				n.convertToPointer();
+			}
+			
+			n.setLength(v.getLength());
 			return;
 		}
 		throw new SemErrorException(n);
@@ -330,24 +370,29 @@ public class ASTChecker implements ASTVisitor
 	{
 		ASTFunctionRecord r=new ASTFunctionRecord();
 
-		if(table.usedFunctionName(n.getName()))
+		if(table.isUsedFunctionName(n.getName()))
 		{
 			throw new SemErrorException(n);
 		}
-
 		r.setName(n.getName());
+		if(!isValidLabel(n.getName()))
+		{
+			table.registerInvalidLabel(n.getName());
+		}
+		scope.addLast(n.getName());
 
 		if(n.getParameters()!=null)
 		{
 			for(ASTParameter p:n.getParameters())
 			{
-				for(String s:p.getNames())
+				for(int i=0; i<p.getNames().size(); ++i)
 				{
-					if(r.findBy(s))
+					if(r.findBy(p.getNames().get(i)))
 					{
 						throw new SemErrorException(p);
 					}
-					r.addParameter(s, p.getStandardType());
+					r.addParameter(p.getNames().get(i), p.getStandardType());
+					p.getNames().set(i, table.getScope(scope, p.getNames().get(i)));
 				}
 			}
 		}
@@ -363,12 +408,14 @@ public class ASTChecker implements ASTVisitor
 					{
 						throw new SemErrorException(v);
 					}
-					r.addLocalVariable(s, v.getType());
+					r.addDeclaredVariable(s, v.getType());
 				}
+				v.setNames((ArrayList<String>)v.getNames().stream().map(s->table.getScope(scope, s)).collect(Collectors.toList()));
 			}
 		}
 		table.addRecord(r);
 		n.getCompoundStatement().accept(this);
+		scope.removeLast();
 	}
 
 	@Override

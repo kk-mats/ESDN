@@ -9,8 +9,15 @@ public class ASTIndexedVariable extends ASTVariable
 		super(record);
 		this.name=name;
 		this.index=index;
+		this.length=1;
 	}
-
+	
+	@Override
+	public void convertToPointer()
+	{
+		isPointer=false;
+	}
+	
 	@Override
 	public void accept(final ASTVisitor visitor) throws ASTException
 	{
@@ -27,5 +34,10 @@ public class ASTIndexedVariable extends ASTVariable
 	public ASTExpressionNode getIndex()
 	{
 		return index;
+	}
+
+	public void setIndex(final ASTExpressionNode index)
+	{
+		this.index=index;
 	}
 }

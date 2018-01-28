@@ -1,180 +1,78 @@
 package enshud.s4.compiler;
 
-import enshud.s3.checker.*;
+import enshud.s3.checker.ASTChecker;
+import enshud.s3.checker.ASTConstructor;
 
-public class ASTCompiler implements ASTVisitor
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
+public class ASTCompiler
 {
-	CASLCode code=new CASLCode();
-	CASLCode storage=new CASLCode();
-	CASLCode constant=new CASLCode();
+	private String inputFileName;
+	private String outputFileName;
 
-	ASTFunctionTable table;
-
-	public ASTCompiler(final ASTFunctionTable table)
+	public ASTCompiler(final String inputFileName, final String outputFileName)
 	{
-		this.table=table;
-		setStorage(table.getGlobal());
-		table.getSubprogram().forEach(this::setStorage);
+		this.inputFileName=inputFileName;
+		this.outputFileName=outputFileName;
 	}
 
-	public void run(final ASTProgram program)
+	public void compile()
 	{
-		try
+		ASTConstructor constructor=new ASTConstructor(inputFileName);
+		if(constructor.success())
 		{
-			program.accept(this);
-		}
-		catch(ASTException e)
-		{
-			System.out.println(e);
-		}
-	}
+			ASTChecker checker=new ASTChecker();
+			checker.run(constructor.getAST());
+			if(checker.success())
+			{
+				AST2CASL translator=new AST2CASL();
+				translator.run(constructor.getAST(), checker.getTable());
+				//ILOptimizer optimizer=new ILOptimizer(translator.getCasl());
 
-	public String toString()
-	{
-		return String.join("\n", new String[]{code.toString(), storage.toString(), constant.toString()});
-	}
+				try(FileWriter fw=new FileWriter(new File(outputFileName)))
+				{
+					System.out.print(checker.getTable().toString());
+					if(Compiler.debug)
+					{
+						//fw.write(checker.getTable().toString());
+					}
+					for(CASL casl : translator.getCaslList())
+					{
+						RegisterAllocator registerAllocator=new RegisterAllocator(casl);
+						if(!Compiler.debug)
+						{
+							registerAllocator.run();
+							fw.write(registerAllocator.getCasl().toString());
+						}
+						else
+						{
+							fw.write(casl.toString());
+						}
+						fw.write("\n");
+					}
+					fw.write(translator.getLibraries());
+				}
+				catch(IOException e)
+				{
+					System.out.print(e);
+				}
 
-	private void setStorage(final ASTFunctionRecord f)
-	{
-		for(ASTVariableTable.ASTVariableRecord r:f.getLocalVariables().getRecords())
-		{
-
-		}
-	}
-
-	private void setConstant(final ASTFactor f)
-	{
-		if(f.getEvalType()==ASTEvalType.tString)
-		{
-		}
-	}
-
-	@Override
-	public void visit(ASTAssignmentStatement n) throws ASTException
-	{
-
-	}
-
-	@Override
-	public void visit(ASTBlock n) throws ASTException
-	{
-		for(ASTVariableDeclaration v:n.getVariableDeclarations())
-		{
-			v.accept(this);
-		}
-		for(ASTSubprogramDeclaration s:n.getSubprogramDeclarations())
-		{
-			s.accept(this);
+				//System.out.print(translator.getIL().toString());
+				//ILCompiler compiler=new ILCompiler(checker.getTable());
+				//compiler.run(constructor.getAST());
+				//System.out.print(compiler.toString());
+			}
 		}
 	}
 
-	@Override
-	public void visit(ASTCompoundStatement n) throws ASTException
+	public void optimize()
 	{
 
 	}
 
-	@Override
-	public void visit(ASTExpression n) throws ASTException
-	{
-
-	}
-
-	@Override
-	public void visit(ASTSimpleExpression n) throws ASTException
-	{
-
-	}
-
-	@Override
-	public void visit(ASTTerm n) throws ASTException
-	{
-
-	}
-
-	@Override
-	public void visit(ASTFactor n) throws ASTException
-	{
-
-	}
-
-	@Override
-	public void visit(ASTIfThenElseStatement n) throws ASTException
-	{
-
-	}
-
-	@Override
-	public void visit(ASTIfThenStatement n) throws ASTException
-	{
-
-	}
-
-	@Override
-	public void visit(ASTIndexedVariable n) throws ASTException
-	{
-
-	}
-
-	@Override
-	public void visit(ASTInputStatement n) throws ASTException
-	{
-
-	}
-
-	@Override
-	public void visit(ASTOutputStatement n) throws ASTException
-	{
-
-	}
-
-	@Override
-	public void visit(ASTParameter n) throws ASTException
-	{
-
-	}
-
-	@Override
-	public void visit(ASTProcedureCallStatement n) throws ASTException
-	{
-
-	}
-
-	@Override
-	public void visit(ASTProgram n) throws ASTException
-	{
-		code.addLine(n.getName(), CASLInst.START, new String[]{"BEGIN"});
-		n.getBlock().accept(this);
-		n.getCompoundStatement().accept(this);
-		code.addLine(null, CASLInst.END, new String[]{});
-	}
-
-	@Override
-	public void visit(ASTPureVariable n) throws ASTException
-	{
-
-	}
-
-	@Override
-	public void visit(ASTVariableType n) throws ASTException
-	{
-
-	}
-
-	@Override
-	public void visit(ASTSubprogramDeclaration n) throws ASTException
-	{
-
-	}
-
-	@Override
-	public void visit(ASTVariableDeclaration n) throws ASTException
-	{
-
-	}
-
-	@Override
-	public void visit(ASTWhileDoStatement n) throws ASTException
+	public void IL2CASL()
 	{
 
 	}

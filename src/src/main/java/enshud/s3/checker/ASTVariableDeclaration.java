@@ -35,4 +35,9 @@ public class ASTVariableDeclaration extends AST
 	{
 		return type;
 	}
+
+	public void setNames(final ArrayList<String> names)
+	{
+		this.names=names;
+	}
 }

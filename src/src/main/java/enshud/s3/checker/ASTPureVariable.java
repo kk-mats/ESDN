@@ -1,7 +1,5 @@
 package enshud.s3.checker;
 
-import enshud.s1.lexer.TSToken;
-
 public class ASTPureVariable extends ASTVariable
 {
 	public ASTPureVariable(final String name, final Record record)
@@ -10,6 +8,19 @@ public class ASTPureVariable extends ASTVariable
 		this.name=name;
 	}
 
+	public ASTPureVariable(final String name, final int length,  Record record)
+	{
+		super(record);
+		this.name=name;
+		this.length=length;
+	}
+	
+	@Override
+	public void convertToPointer()
+	{
+		isPointer=true;
+	}
+	
 	@Override
 	public void accept(final ASTVisitor visitor) throws ASTException
 	{
