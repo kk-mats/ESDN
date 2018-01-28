@@ -471,18 +471,21 @@ public class AST2CASL implements ASTVisitor
 		
 		casl.addCode(CASL.Inst.CALL, new CASL.OperandElement(table.getLabelAlias(n.getName()), CASL.OperandElement.Attribute.address));
 		
-		// pop the address of global variable buffer in the called function
-		casl.addCode(CASL.Inst.POP, Temporally.getNew());
-		int ld=0;
-		for(int i=0; i<globalVariables.size(); i++)
+		// if the function use global variables
+		if(globalVariables.size()>0)
 		{
-			if(globalVariables.get(i).getEvalType().isStandardType())
+			// pop the address of global variable buffer of the function
+			casl.addCode(CASL.Inst.POP, Temporally.getNew());
+			int ld=0;
+			for(int i=0; i<globalVariables.size(); i++)
 			{
-				casl.addCode(CASL.Inst.LD, new CASL.OperandElement("@"+globalVariables.get(i).getName(), CASL.OperandElement.Attribute.register), new CASL.OperandElement(String.valueOf(ld), CASL.OperandElement.Attribute.address), Temporally.getLatest());
-				++ld;
+				if(globalVariables.get(i).getEvalType().isStandardType())
+				{
+					casl.addCode(CASL.Inst.LD, new CASL.OperandElement("@"+globalVariables.get(i).getName(), CASL.OperandElement.Attribute.register), new CASL.OperandElement(String.valueOf(ld), CASL.OperandElement.Attribute.address), Temporally.getLatest());
+					++ld;
+				}
 			}
 		}
-		
 		casl.addCode(CASL.Inst.RPOP);
 	}
 	
