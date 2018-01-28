@@ -279,8 +279,7 @@ RETV	DS		1
 ; それぞれ格納されている．
 WRTCH	START
 	POP		GR5
-	POP		GR1			; 文字のアドレス
-	LD		GR2,0,GR1
+	POP		GR2
 	POP		GR4			; LIBLENのアドレス
 	LD		GR6,0,GR4	; LIBLEN
 	POP		GR7			; LIBBUF
