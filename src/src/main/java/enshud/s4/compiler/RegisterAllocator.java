@@ -13,7 +13,6 @@ public class RegisterAllocator
 		private static int priorityCounter=0;
 		private String variable="";
 		private int priority=0;
-		private boolean valueHasChanged=false;
 		
 		public Register(){}
 		
@@ -22,11 +21,6 @@ public class RegisterAllocator
 			this.variable=variable;
 			++priorityCounter;
 			this.priority=priorityCounter;
-		}
-		
-		public boolean isEmpty()
-		{
-			return !variable.isEmpty();
 		}
 		
 		public String toString()
@@ -39,8 +33,13 @@ public class RegisterAllocator
 	//private int cur=0;
 	private ArrayDeque<Register[]> registersStack=new ArrayDeque<>();
 	private ControlFlowGraph controlFlowGraph;
+	
+	// Memory is map list of variable name stored in memory and flag the value has changed
 	private ArrayList<AbstractMap.SimpleEntry<String, Boolean>> memory=new ArrayList<>();
+	
+	// Registers of CASL. This allocator uses GR1 to GR7
 	private Register[] registers=new Register[7];
+	
 	private CASL casl;
 	
 	public RegisterAllocator(final CASL casl)
