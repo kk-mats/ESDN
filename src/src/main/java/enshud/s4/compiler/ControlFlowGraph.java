@@ -2,6 +2,7 @@ package enshud.s4.compiler;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 
 public class ControlFlowGraph
@@ -10,8 +11,11 @@ public class ControlFlowGraph
 	{
 		private String name="";
 		private ArrayList<CASL.Code> code;
-		private ArrayList<BasicBlock> next=new ArrayList<>();
+		private ArrayList<BasicBlock> child=new ArrayList<>();
+		private ArrayList<BasicBlock> parent=new ArrayList<>();
 		private boolean visited=false;
+		private HashMap<CASL.Code, HashMap<CASL.Code, String>> in=new HashMap<>();
+		private HashMap<CASL.Code, HashMap<CASL.Code, String>> out=new HashMap<>();
 		
 		public BasicBlock(String name, ArrayList<CASL.Code> code)
 		{
@@ -23,7 +27,7 @@ public class ControlFlowGraph
 		{
 			String s=name+"\n{\n";
 			s+=code.stream().map(CASL.Code::toString).reduce("", (joined, t)->joined+t+"\n");
-			s+="}->["+String.join(", ", next.stream().map(b->b.name).collect(Collectors.toList()))+"]\n";
+			s+="}->["+String.join(", ", child.stream().map(b->b.name).collect(Collectors.toList()))+"]\n";
 			return s;
 		}
 		
@@ -38,9 +42,39 @@ public class ControlFlowGraph
 			return code;
 		}
 		
-		public ArrayList<BasicBlock> getNext()
+		public ArrayList<BasicBlock> getChild()
 		{
-			return next;
+			return child;
+		}
+		
+		public ArrayList<BasicBlock> getParent()
+		{
+			return parent;
+		}
+		
+		public HashMap<CASL.Code, HashMap<CASL.Code, String>> getIn()
+		{
+			return in;
+		}
+		
+		public void setIn(HashMap<CASL.Code, HashMap<CASL.Code, String>> in)
+		{
+			this.in=in;
+		}
+		
+		public HashMap<CASL.Code, HashMap<CASL.Code, String>> getOut()
+		{
+			return out;
+		}
+		
+		public void setOut(HashMap<CASL.Code, HashMap<CASL.Code, String>> out)
+		{
+			this.out=out;
+		}
+		
+		public HashMap<CASL.Code, String> getOut(final CASL.Code code)
+		{
+			return out.get(code);
 		}
 	}
 	
@@ -52,6 +86,11 @@ public class ControlFlowGraph
 	{
 		graph=split(casl);
 		connectNodes();
+	}
+	
+	public void setUnvisited()
+	{
+		graph.stream().forEach(b->b.visited=false);
 	}
 	
 	private ArrayList<BasicBlock> split(final CASL casl)
@@ -114,7 +153,8 @@ public class ControlFlowGraph
 				}
 				if(from!=null && next!=null)
 				{
-					from.next.add(next);
+					from.child.add(next);
+					next.parent.add(from);
 					break;
 				}
 			}

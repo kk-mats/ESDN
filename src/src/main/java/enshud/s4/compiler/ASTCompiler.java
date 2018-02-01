@@ -37,6 +37,8 @@ public class ASTCompiler
 					if(Compiler.debug)
 					{
 						//fw.write(checker.getTable().toString());
+						DataFlowAnalyze analyzer=new DataFlowAnalyze(translator.getCaslList().get(0));
+						analyzer.print();
 					}
 					for(CASL casl : translator.getCaslList())
 					{
@@ -44,7 +46,8 @@ public class ASTCompiler
 						if(!Compiler.debug)
 						{
 							registerAllocator.run();
-							fw.write(registerAllocator.getCasl().toString());
+							PeepHoleOptimizer peepHoleOptimizer=new PeepHoleOptimizer(registerAllocator.getCasl());
+							fw.write(peepHoleOptimizer.getCasl().toString());
 						}
 						else
 						{

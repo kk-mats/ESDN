@@ -68,6 +68,7 @@ public class RegisterAllocator
 						// variable has changed
 						if(memory.get(j).getValue())
 						{
+							String label="";
 							newMain.add(new CASL.Code(CASL.Inst.LD, new CASL.OperandElement("GR"+(i+1), CASL.OperandElement.Attribute.register), new CASL.OperandElement("MEM"+j, CASL.OperandElement.Attribute.address)));
 						}
 						break;
@@ -215,11 +216,13 @@ public class RegisterAllocator
 				saveAll();
 			}
 			
-			for(ControlFlowGraph.BasicBlock next : current.getNext())
+			for(ControlFlowGraph.BasicBlock next : current.getChild())
 			{
 				basicBlockStack.push(next);
 			}
 		}
+		
+		controlFlowGraph.setUnvisited();
 		
 		IntStream.range(0, memory.size()).forEach(i->casl.addStorage(new CASL.OperandElement("MEM"+i, CASL.OperandElement.Attribute.address), 1));
 		

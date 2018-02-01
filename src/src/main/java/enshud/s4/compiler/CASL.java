@@ -59,6 +59,11 @@ public class CASL
 		{
 			return this==JPL || this==JMI || this==JNZ || this==JZE || this==JOV || this==JUMP;
 		}
+		
+		public boolean isGenKill()
+		{
+			return this==Inst.LD || this==Inst.LAD || this==Inst.ADDA || this==Inst.ADDL || this==Inst.SUBA || this==Inst.SUBL || this==Inst.AND || this==Inst.OR || this==Inst.XOR || this==Inst.SLA || this==Inst.SRA || this==Inst.SLL || this==Inst.SRL || this==Inst.POP;
+		}
 	}
 	
 	public enum Library
