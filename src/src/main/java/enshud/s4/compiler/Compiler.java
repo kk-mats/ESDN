@@ -18,7 +18,7 @@ public class Compiler {
 	 * @param outputFileName 出力casファイル名
 	 */
 	public static final boolean debug=false;
-	public static final boolean doOptimize=false;
+	public static final boolean doOptimize=true;
 
 	/**
 	 * サンプルmainメソッド．
