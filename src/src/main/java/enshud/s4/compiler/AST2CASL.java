@@ -296,6 +296,21 @@ public class AST2CASL implements ASTVisitor
 		CASL.OperandElement L1=Label.getNew();
 		CASL.OperandElement L2=Label.getNew();
 		n.getCondition().accept(this);
+		
+		if(n.getCondition() instanceof ASTFactor && ((ASTFactor)n.getCondition()).isConstant())
+		{
+			boolean flag=n.getCondition().getRecord().getTSToken()==TSToken.STRUE;
+			if(flag)
+			{
+				n.getThenStatement().accept(this);
+			}
+			else
+			{
+				n.getElseStatement().accept(this);
+			}
+			return;
+		}
+		
 		casl.addCode(CASL.Inst.CPA, n.getCondition().getResultSymbol(), new CASL.OperandElement(CASL.FalseString, CASL.OperandElement.Attribute.integer));
 		casl.addCode(CASL.Inst.JZE, L1);
 		n.getThenStatement().accept(this);
@@ -309,6 +324,17 @@ public class AST2CASL implements ASTVisitor
 	{
 		CASL.OperandElement L=Label.getNew();
 		n.getCondition().accept(this);
+		
+		if(n.getCondition() instanceof ASTFactor && ((ASTFactor)n.getCondition()).isConstant())
+		{
+			boolean flag=n.getCondition().getRecord().getTSToken()==TSToken.STRUE;
+			if(flag)
+			{
+				n.getThenStatement().accept(this);
+			}
+			return;
+		}
+		
 		casl.addCode(CASL.Inst.CPA, n.getCondition().getResultSymbol(), new CASL.OperandElement(CASL.FalseString, CASL.OperandElement.Attribute.integer));
 		casl.addCode(CASL.Inst.JZE, L);
 		n.getThenStatement().accept(this);
