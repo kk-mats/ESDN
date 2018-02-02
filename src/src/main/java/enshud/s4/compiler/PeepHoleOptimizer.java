@@ -21,7 +21,6 @@ public class PeepHoleOptimizer
 			change=false;
 			labelRename();
 			main=newmain;
-			System.out.print("t");
 		}
 		while(change);
 		System.out.println(labelAlias.toString());
@@ -37,6 +36,10 @@ public class PeepHoleOptimizer
 	{
 		for(int i=0; i<main.size(); ++i)
 		{
+			if(main.get(i).getLabel().isEmpty() && main.get(i).getInst()==CASL.Inst.NOP)
+			{
+				continue;
+			}
 			if(!main.get(i).getLabel().isEmpty() && main.get(i).getInst()==CASL.Inst.NOP)
 			{
 				String to=main.get(i).getLabel();

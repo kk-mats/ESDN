@@ -18,6 +18,7 @@ public class Compiler {
 	 * @param outputFileName 出力casファイル名
 	 */
 	public static final boolean debug=false;
+	public static final boolean doOptimize=false;
 
 	/**
 	 * サンプルmainメソッド．
@@ -26,12 +27,12 @@ public class Compiler {
 	public static void main(final String[] args)
 	{
 		// Compilerを実行してcasを生成する
-		//new Compiler().run("data/ts/normal03.ts", "tmp/out.cas");
-		new enshud.s1.lexer.Lexer().run("mytest.pas", "mytest.ts");
-		new Compiler().run("mytest.ts", "tmp.cas");
+		new Compiler().run("data/ts/normal10.ts", "lib/out.cas");
+		//new enshud.s1.lexer.Lexer().run("mytest.pas", "mytest.ts");
+		//new Compiler().run("mytest.ts", "tmp.cas");
 
 		// CaslSimulatorクラスを使ってコンパイルしたcasを，CASLアセンブラ & COMETシミュレータで実行する
-		//CaslSimulator.run("tmp/out.cas", "tmp/out.ans");
+		//CaslSimulator.run("lib/out.cas", "lib/out.ans");
 	}
 	public void run(final String inputFileName, final String outputFileName)
 	{

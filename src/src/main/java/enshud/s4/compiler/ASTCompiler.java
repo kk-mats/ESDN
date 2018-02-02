@@ -2,7 +2,6 @@ package enshud.s4.compiler;
 
 import enshud.s3.checker.ASTChecker;
 import enshud.s3.checker.ASTConstructor;
-import enshud.s3.checker.ASTPrinter;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -28,12 +27,12 @@ public class ASTCompiler
 			checker.run(constructor.getAST());
 			if(checker.success())
 			{
-				ASTOptimizer optimizer=new ASTOptimizer(constructor.getAST());
-				ASTPrinter printer=new ASTPrinter();
-				printer.run(optimizer.getAST());
+				if(Compiler.doOptimize)
+				{
+					new ASTOptimizer(constructor.getAST());
+				}
 				AST2CASL translator=new AST2CASL();
 				translator.run(constructor.getAST(), checker.getTable());
-				//ILOptimizer optimizer=new ILOptimizer(translator.getCasl());
 
 				try(FileWriter fw=new FileWriter(new File(outputFileName)))
 				{
@@ -50,8 +49,16 @@ public class ASTCompiler
 						if(!Compiler.debug)
 						{
 							registerAllocator.run();
-							PeepHoleOptimizer peepHoleOptimizer=new PeepHoleOptimizer(registerAllocator.getCasl());
-							fw.write(peepHoleOptimizer.getCasl().toString());
+							
+							if(Compiler.doOptimize)
+							{
+								PeepHoleOptimizer peepHoleOptimizer=new PeepHoleOptimizer(registerAllocator.getCasl());
+								fw.write(peepHoleOptimizer.getCasl().toString());
+							}
+							else
+							{
+								fw.write(registerAllocator.getCasl().toString());
+							}
 						}
 						else
 						{
