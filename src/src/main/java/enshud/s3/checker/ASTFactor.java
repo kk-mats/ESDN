@@ -8,6 +8,7 @@ public class ASTFactor extends ASTExpressionNode
 	private Integer cinteger=null;
 	private Boolean cboolean=null;
 	private String cstring=null;
+	private boolean isConstant=false;
 
 	public ASTFactor(final ASTVariable variable, final Record record)
 	{
@@ -30,6 +31,7 @@ public class ASTFactor extends ASTExpressionNode
 	public ASTFactor(final Record record)
 	{
 		super(record);
+		isConstant=true;
 		switch(record.getTSToken())
 		{
 			case SCONSTANT:
@@ -61,7 +63,12 @@ public class ASTFactor extends ASTExpressionNode
 			}
 		}
 	}
-
+	
+	public boolean isConstant()
+	{
+		return isConstant;
+	}
+	
 	public ASTVariable getVariable()
 	{
 		return variable;
@@ -76,7 +83,17 @@ public class ASTFactor extends ASTExpressionNode
 	{
 		return notFactor;
 	}
-
+	
+	public void setExpression(ASTExpressionNode expression)
+	{
+		this.expression=expression;
+	}
+	
+	public void setNotFactor(ASTFactor notFactor)
+	{
+		this.notFactor=notFactor;
+	}
+	
 	public void accept(final ASTVisitor visitor) throws ASTException
 	{
 		try

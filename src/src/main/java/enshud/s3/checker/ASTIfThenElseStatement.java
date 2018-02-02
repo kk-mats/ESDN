@@ -40,4 +40,9 @@ public class ASTIfThenElseStatement extends ASTStatement
 	{
 		return elseStatement;
 	}
+	
+	public void setCondition(ASTExpressionNode condition)
+	{
+		this.condition=condition;
+	}
 }

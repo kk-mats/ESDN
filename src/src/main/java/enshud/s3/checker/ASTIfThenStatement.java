@@ -28,7 +28,12 @@ public class ASTIfThenStatement extends ASTStatement
 	{
 		return condition;
 	}
-
+	
+	public void setCondition(ASTExpressionNode condition)
+	{
+		this.condition=condition;
+	}
+	
 	public ASTCompoundStatement getThenStatement()
 	{
 		return thenStatement;

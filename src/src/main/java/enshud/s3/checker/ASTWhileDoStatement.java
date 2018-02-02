@@ -33,4 +33,9 @@ public class ASTWhileDoStatement extends ASTStatement
 	{
 		return doStatement;
 	}
+	
+	public void setCondition(ASTExpressionNode condition)
+	{
+		this.condition=condition;
+	}
 }

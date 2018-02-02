@@ -44,4 +44,9 @@ public class ASTProcedureCallStatement extends ASTStatement
 	{
 		return expressions;
 	}
+	
+	public void setExpression(int i, ASTExpressionNode expression)
+	{
+		expressions.set(i, expression);
+	}
 }

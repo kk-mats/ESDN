@@ -33,4 +33,9 @@ public class ASTAssignmentStatement extends ASTStatement
 	{
 		return expression;
 	}
+	
+	public void setExpression(ASTExpressionNode expression)
+	{
+		this.expression=expression;
+	}
 }

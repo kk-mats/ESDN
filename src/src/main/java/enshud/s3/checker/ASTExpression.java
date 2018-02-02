@@ -21,7 +21,17 @@ public class ASTExpression extends ASTExpressionNode
 	{
 		return right;
 	}
-
+	
+	public void setLeft(ASTExpressionNode left)
+	{
+		this.left=left;
+	}
+	
+	public void setRight(ASTExpressionNode right)
+	{
+		this.right=right;
+	}
+	
 	@Override
 	public void accept(final ASTVisitor visitor) throws ASTException
 	{

@@ -31,7 +31,17 @@ public class ASTSimpleExpression extends ASTExpressionNode
 	{
 		return sign;
 	}
-
+	
+	public void setLeft(ASTExpressionNode left)
+	{
+		this.left=left;
+	}
+	
+	public void setRight(ASTExpressionNode right)
+	{
+		this.right=right;
+	}
+	
 	public void setSign(boolean sign)
 	{
 		this.sign=sign;

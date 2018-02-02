@@ -2,6 +2,7 @@ package enshud.s4.compiler;
 
 import enshud.s3.checker.ASTChecker;
 import enshud.s3.checker.ASTConstructor;
+import enshud.s3.checker.ASTPrinter;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -27,6 +28,9 @@ public class ASTCompiler
 			checker.run(constructor.getAST());
 			if(checker.success())
 			{
+				ASTOptimizer optimizer=new ASTOptimizer(constructor.getAST());
+				ASTPrinter printer=new ASTPrinter();
+				printer.run(optimizer.getAST());
 				AST2CASL translator=new AST2CASL();
 				translator.run(constructor.getAST(), checker.getTable());
 				//ILOptimizer optimizer=new ILOptimizer(translator.getCasl());
@@ -37,8 +41,8 @@ public class ASTCompiler
 					if(Compiler.debug)
 					{
 						//fw.write(checker.getTable().toString());
-						DataFlowAnalyze analyzer=new DataFlowAnalyze(translator.getCaslList().get(0));
-						analyzer.print();
+						//DataFlowAnalyze analyzer=new DataFlowAnalyze(translator.getCaslList().get(0));
+						//analyzer.print();
 					}
 					for(CASL casl : translator.getCaslList())
 					{

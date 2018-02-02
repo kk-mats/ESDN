@@ -279,7 +279,7 @@ public class AST2CASL implements ASTVisitor
 		}
 		else if(n.getEvalType()==ASTEvalType.tBoolean)
 		{
-			n.setResultSymbol(new CASL.Operand(new CASL.OperandElement(n.getRecord().getText().equals("true") ? CASL.TrueString : CASL.FalseString, CASL.OperandElement.Attribute.integer)));
+			n.setResultSymbol(new CASL.Operand(new CASL.OperandElement(n.getRecord().getTSToken()==TSToken.STRUE ? CASL.TrueString : CASL.FalseString, CASL.OperandElement.Attribute.integer)));
 		}
 		else if(n.getEvalType()==ASTEvalType.tInteger)
 		{
@@ -325,6 +325,12 @@ public class AST2CASL implements ASTVisitor
 			casl.addCode(CASL.Inst.ADDA, ret, n.getIndex().getResultSymbol());
 			casl.addCode(CASL.Inst.LD, Temporally.getNew(), new CASL.OperandElement("0", CASL.OperandElement.Attribute.address), ret);
 			n.setResultSymbol(new CASL.Operand(Temporally.getLatest()));
+			return;
+		}
+		if(n.getIndex() instanceof ASTFactor && ((ASTFactor)n.getIndex()).isConstant() && n.getIndex().getEvalType()==ASTEvalType.tInteger)
+		{
+			casl.addCode(CASL.Inst.LAD, Temporally.getNew(), n.getIndex().getResultSymbol());
+			n.setResultSymbol(new CASL.Operand(new CASL.OperandElement(table.getLabelAlias(n.getName()), CASL.OperandElement.Attribute.address), Temporally.getLatest()));
 			return;
 		}
 		n.setResultSymbol(new CASL.Operand(new CASL.OperandElement(table.getLabelAlias(n.getName()), CASL.OperandElement.Attribute.address)).join(n.getIndex().getResultSymbol()));
